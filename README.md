@@ -166,10 +166,6 @@ Create text files with one path per line:
 - Check that covariance file names match model names
 - Make sure files exist and are readable
 
-**"Chromosome not found"**
-- Check chromosome naming (chr1 vs 1)
-- Verify reference genome path
-
 **Slow performance**
 - For predictions: try single CPU (`--n-jobs 1`)
 - For statistics: ensure GPU is available or use parallel CPU
