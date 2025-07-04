@@ -1,0 +1,2 @@
+./example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic
+./example_models/GABPA_FL_TC40NGCGATT_YWL_jolma2025_0_2_7mer.weights.qbic
