@@ -1,6 +1,6 @@
 # QBIC-SELEX: Quantitative, Bias-Corrected Modeling of Variant Effects on Transcription Factor Binding
 
-A Python script for predicting how genetic variants affect transcription factor binding using QBIC models. This tool can handle single models or batch processing of multiple models, with optional statistical testing.
+A Python script for predicting how genetic variants affect transcription factor binding using QBIC-SELEX models. Supports single model and batch processing with optional statistical testing.
 
 ## Quick Start
 
@@ -15,22 +15,12 @@ python qbic_predict.py -v example_variant_input.csv -m example_models/ETV4_eDBD_
 # Process multiple models
 python qbic_predict.py -v variants.csv -m example_models_list.txt -o results.csv
 ```
-
-## What This Script Does
-
-The script predicts how genetic variants change transcription factor binding affinity. It works by:
-
-1. **Extracting sequences** around your variants (10bp context by default)
-2. **Computing k-mer features** from the reference and alternate sequences  
-3. **Applying QBIC model weights** to predict binding changes
-4. **Optionally computing statistics** (p-values, z-scores) if you provide covariance matrices
-
 ## Input Formats
 
 You can provide variants in two ways:
 
 ### Option 1: Variant Coordinates
-Give the script chromosome, position, and alleles - it will extract sequences automatically:
+Provide chromosome, position, and alleles - sequences will be extracted automatically (genome file is needed in the `genome/` directory):
 
 ```csv
 chrom,pos,ref,alt
@@ -46,18 +36,29 @@ ref_sequence,alt_sequence
 ATCGATCGATCGATCGATCG,ATCGATCGACCGATCGATCG
 GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 ```
+## Data Availability
+
+We provide example models in the `example_models` directory. The example covariance matrices are available download from Zenodo (https://zenodo.org/xxxx).
+For complete QBiC-SELEX models, we provide two collections (Zenodo link: https://zenodo.org/xxxx):
+
+- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors.
+- **Secondary Model Collection**: Models curated against SNP-SELEX data if primary models perform poorly.
+
+We also provide models-to-TF and TF-to-models mapping files `TF_to_models.txt` and `models_to_TF.txt`.
+
+**Scenario 1**: When you have interested variants, you can use run all of the QBiC-SELEX models on them, and use the `models_to_TF.txt` file to get the transcription factors that the models are for.
+
+**Scenario 2**: When you have interested TFs, you can use the `TF_to_models.txt` file to get the models that are for them. 
 
 ## Processing Modes
 
 ### Variants Effect Predictions Only (Default)
 - **CPU**: Single CPU by default (fast for most cases)
 - **Parallel**: Use `--n-jobs 4` if you want to speed up large datasets
-- **Best for**: Quick predictions, small to medium datasets
 
 ### Statistics Computation
-- **GPU**: Default when available (much faster for matrix operations)
+- **GPU**: Highly recommended (much faster for matrix operations in p-value and z-score computation)
 - **CPU**: Falls back to parallel CPU if GPU unavailable (do not recommend for large datasets)
-- **Best for**: Large datasets, when you need p-values and z-scores
 
 ## Common Use Cases
 
@@ -139,21 +140,6 @@ Create text files with one path per line:
 /path/to/model2.cov.qbic
 ```
 
-## Performance Tips
-
-### For Predictions Only
-- Single CPU is usually fastest (no parallel overhead)
-- Use `--n-jobs 4` only for very large datasets
-
-### For Statistics
-- GPU is much faster if available
-- CPU parallel works well as fallback
-- Large datasets benefit most from GPU
-
-### Memory Usage
-- The script handles memory automatically
-- For very large datasets, consider processing in chunks
-
 ## Troubleshooting
 
 ### Common Issues
@@ -188,22 +174,5 @@ cupy cudf cuml
 ```
 
 ### Reference Genome
-Put genome files in `utils/assembly/` or provide full paths.
+Put genome files in `genome/`, the genome file should be `hg38.fa` or `hg19.fa`.
 
-## Example Workflow
-
-1. **Prepare your variants** in CSV format
-2. **Get your QBIC models** (`.weights.qbic` files)
-3. **Get covariance matrices** if you want statistics (`.cov.qbic` files)
-4. **Run the script** with appropriate options
-5. **Check the output** for predictions and statistics
-
-## Getting Help
-
-If you run into issues:
-1. Check the error messages - they're usually helpful
-2. Look at the combined error log file
-3. Try with a small test dataset first
-4. Make sure your file paths and formats are correct
-
-The script is designed to be robust and will continue processing even if some variants or models fail. 
