@@ -3,16 +3,16 @@
 A Python script for predicting how genetic variants affect transcription factor binding using QBIC-SELEX models. Supports single model and batch processing with optional statistical testing.
 
 The example models are in the `example_models` directory, and the corresponding [example covariance matrices](https://zenodo.org/xxxx) are available for download.
-We carefully curated two collections of final QBiC-SELEX models:
+For complete QBiC-SELEX models and corresponding covariance matrices, we have two curated collections:
 
-- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF. [link](https://zenodo.org/xxxx)
-- **Secondary Model Collection**: Models curated against SNP-SELEX data. [link](https://zenodo.org/xxxx)
+- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF. ([link](https://zenodo.org/xxxx))
+- **Secondary Model Collection**: Models curated against SNP-SELEX data. ([link](https://zenodo.org/xxxx))
 
-We also provide models to TF and TF to models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. You can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
+We also provide models to TF and TF to models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. Users can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
 
-- **Scenario 1**: When you have a list of interested variants, you can use run all of the QBiC-SELEX models on them, and use the `models_to_TF.txt` file to get the transcription factors that the models are for.
+- **Scenario 1**: When users have a list of interested variants, they can use run all of the QBiC-SELEX models on them, and use the `models_to_TF.txt` file to find which TFs the variants affect the most.
 
-- **Scenario 2**: When you have a list of interested TFs, you can use the `TF_to_models.txt` file to get the models that are for them. 
+- **Scenario 2**: When users have a list of interested TFs, they can use the `TF_to_models.txt` file to find which models are for them. 
 
 
 ## Quick Start
@@ -46,7 +46,7 @@ python qbic_predict.py -v example_variant_input.csv \
 ```
 ## Input Formats
 
-You can provide variants in two ways:
+Users can provide variants in two ways:
 
 ### Option 1: Variant Coordinates
 Provide chromosome, position, and alleles - sequences will be extracted automatically (genome file is needed in the `genome/` directory):
@@ -58,7 +58,7 @@ chr2,5000,G,C
 ```
 
 ### Option 2: Pre-extracted Sequences
-If you already have sequences, provide them directly:
+If users already have sequences, they can provide them directly:
 
 ```csv
 ref_sequence,alt_sequence
@@ -70,7 +70,7 @@ GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 
 ### Variants Effect Predictions Only (Default)
 - **CPU**: Single CPU by default (fast for most cases)
-- **Parallel**: Use `--n-jobs 4` if you want to speed up large datasets
+- **Parallel**: Use `--n-jobs 4` if users want to speed up large datasets
 
 ### Statistics Computation (Optional with `--compute-stats`)
 - **GPU**: Highly recommended (much faster for matrix operations in p-value and z-score computation)
@@ -80,7 +80,7 @@ GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 ## Command Line Options
 
 ### Required
-- `-v, --variants`: Your input file (CSV/TSV)
+- `-v, --variants`: Users' input file (CSV/TSV)
 - `-m, --model`: Single model file OR text file with model paths
 - `-o, --output`: Where to save results
 
@@ -95,7 +95,7 @@ GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 
 ## Output Format
 
-The output CSV contains all your original columns plus:
+The output CSV contains all users' original columns plus:
 
 - `ref_sequence`, `alt_sequence`: The extracted sequences
 - `model`: Which model was used
