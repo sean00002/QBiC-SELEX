@@ -4,16 +4,31 @@ A Python script for predicting how genetic variants affect transcription factor 
 
 ## Quick Start
 
-### Basic Usage
+### Example Usage
 ```bash
 # Predict effects for a single model
-python qbic_predict.py -v example_sequence_input.csv -m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic -o results.csv
+python qbic_predict.py -v example_sequence_input.csv \
+-m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
+-o results.csv
 
-# Add statistical testing (p-values and z-scores). We highly recommend using GPU for this step or use multiple CPU cores for small datasets.
-python qbic_predict.py -v example_variant_input.csv -m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic -c example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov.qbic --compute-stats -o results.csv
+# Add statistical testing (p-values and z-scores). We highly recommend using GPU (default) for this step or use multiple CPU cores for small datasets.
+python qbic_predict.py -v example_variant_input.csv \
+-m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
+-c example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov.qbic \
+--compute-stats \
+-o results.csv
 
-# Process multiple models
-python qbic_predict.py -v variants.csv -m example_models_list.txt -o results.csv
+# Process multiple models without statistics computation
+python qbic_predict.py -v example_sequence_input.csv \
+-m example_models_list.txt \
+-o results.csv
+
+# Process multiple models with statistics computation
+python qbic_predict.py -v example_variant_input.csv \
+-m example_models_list.txt \
+-c example_covs_list.txt \
+--compute-stats \
+-o results.csv
 ```
 ## Input Formats
 
@@ -41,14 +56,14 @@ GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 We provide example models in the `example_models` directory. The example covariance matrices are available download from Zenodo (https://zenodo.org/xxxx).
 For complete QBiC-SELEX models, we provide two collections (Zenodo link: https://zenodo.org/xxxx):
 
-- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors.
+- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF.
 - **Secondary Model Collection**: Models curated against SNP-SELEX data if primary models perform poorly.
 
-We also provide models-to-TF and TF-to-models mapping files `TF_to_models.txt` and `models_to_TF.txt`.
+We also provide models to TF and TF to models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. You can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
 
-**Scenario 1**: When you have interested variants, you can use run all of the QBiC-SELEX models on them, and use the `models_to_TF.txt` file to get the transcription factors that the models are for.
+- **Scenario 1**: When you have a list of interested variants, you can use run all of the QBiC-SELEX models on them, and use the `models_to_TF.txt` file to get the transcription factors that the models are for.
 
-**Scenario 2**: When you have interested TFs, you can use the `TF_to_models.txt` file to get the models that are for them. 
+- **Scenario 2**: When you have a list of interested TFs, you can use the `TF_to_models.txt` file to get the models that are for them. 
 
 ## Processing Modes
 
@@ -56,39 +71,10 @@ We also provide models-to-TF and TF-to-models mapping files `TF_to_models.txt` a
 - **CPU**: Single CPU by default (fast for most cases)
 - **Parallel**: Use `--n-jobs 4` if you want to speed up large datasets
 
-### Statistics Computation
+### Statistics Computation (Optional with `--compute-stats`)
 - **GPU**: Highly recommended (much faster for matrix operations in p-value and z-score computation)
 - **CPU**: Falls back to parallel CPU if GPU unavailable (do not recommend for large datasets)
 
-## Common Use Cases
-
-### Single Model, Small Dataset
-```bash
-# Just predictions - single CPU is fine
-python qbic_predict_final.py -v variants.csv -m model.weights.qbic -o results.csv
-```
-
-### Single Model, Large Dataset with Statistics
-```bash
-# GPU will be used automatically if available
-python qbic_predict_final.py -v variants.csv -m model.weights.qbic -c model.cov.qbic --compute-stats -o results.csv
-```
-
-### Multiple Models
-```bash
-# Create a text file with model paths, one per line
-echo "/path/to/model1.weights.qbic" > models.txt
-echo "/path/to/model2.weights.qbic" >> models.txt
-
-# Process all models
-python qbic_predict_final.py -v variants.csv -m models.txt -o results.csv
-```
-
-### Force CPU Usage
-```bash
-# If you're on a shared system or GPU has issues
-python qbic_predict_final.py -v variants.csv -m model.weights.qbic -c model.cov.qbic --compute-stats --use-cpu -o results.csv
-```
 
 ## Command Line Options
 
@@ -119,11 +105,11 @@ The output CSV contains all your original columns plus:
 
 ### Model Files
 - Extension: `.weights.qbic`
-- Example: `GABPA_6mer_100k_50k_seed42.weights.qbic`
+- Example: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic`
 
 ### Covariance Files  
 - Extension: `.cov.qbic`
-- Must match model names: `GABPA_6mer_100k_50k_seed42.cov.qbic`
+- Must match model names: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov.qbic`
 
 ### Batch Processing Files
 Create text files with one path per line:
@@ -158,7 +144,7 @@ Create text files with one path per line:
 
 ### Error Reports
 The script creates detailed error logs when things go wrong:
-- `qbic_combined_errors_YYYYMMDD_HHMMSS.log`
+- `qbic_error_report_YYYYMMDD_HHMMSS.log`
 - Contains specific error details and suggestions
 
 ## Dependencies
