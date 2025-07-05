@@ -20,13 +20,13 @@ We also provide models to TF and TF to models mapping files `TF_to_models.txt` a
 ### Example Usage
 ```bash
 # Predict effects for a single model
-python qbic_predict.py -v example_sequence_input.csv \
+./qbic_predict.py -v example_sequence_input.csv \
 -m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
 -o results.csv
 
 # Add statistical testing (p-values and z-scores). 
 # We highly recommend using GPU (default) for this step or use multiple CPU cores for small datasets.
-python qbic_predict.py -v example_variant_input.csv \
+./qbic_predict.py -v example_variant_input.csv \
 -m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
 -c example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov.qbic \
 --compute-stats \
@@ -34,13 +34,13 @@ python qbic_predict.py -v example_variant_input.csv \
 
 # Process multiple models without statistics computation
 # example_models_list.txt is a text file with one model path per line
-python qbic_predict.py -v example_sequence_input.csv \
+./qbic_predict.py -v example_sequence_input.csv \
 -m example_models_list.txt \
 -o results.csv
 
 # Process multiple models with statistics computation
 # example_models_list.txt and example_covs_list.txt are text files with one model or covariance matrix path per line
-python qbic_predict.py -v example_variant_input.csv \
+./qbic_predict.py -v example_variant_input.csv \
 -m example_models_list.txt \
 -c example_covs_list.txt \
 --compute-stats \
