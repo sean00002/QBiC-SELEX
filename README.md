@@ -33,11 +33,13 @@ python qbic_predict.py -v example_variant_input.csv \
 -o results.csv
 
 # Process multiple models without statistics computation
+# example_models_list.txt is a text file with one model path per line
 python qbic_predict.py -v example_sequence_input.csv \
 -m example_models_list.txt \
 -o results.csv
 
 # Process multiple models with statistics computation
+# example_models_list.txt and example_covs_list.txt are text files with one model or covariance matrix path per line
 python qbic_predict.py -v example_variant_input.csv \
 -m example_models_list.txt \
 -c example_covs_list.txt \
@@ -45,11 +47,11 @@ python qbic_predict.py -v example_variant_input.csv \
 -o results.csv
 ```
 ## Input Formats
-
+ 
 Users can provide variants in two ways:
 
 ### Option 1: Variant Coordinates
-Provide chromosome, position, and alleles - sequences will be extracted automatically (genome file is needed in the `genome/` directory):
+Provide chromosome, position, and alleles - context sequences will be extracted automatically (genome file is needed in the `genome/` directory in this case):
 
 ```csv
 chrom,pos,ref,alt
@@ -57,8 +59,8 @@ chr1,1000,A,T
 chr2,5000,G,C
 ```
 
-### Option 2: Pre-extracted Sequences
-If users already have sequences, they can provide them directly:
+### Option 2: Pre-extracted Context Sequences
+If users already have context sequences, they can provide them directly:
 
 ```csv
 ref_sequence,alt_sequence
@@ -90,14 +92,14 @@ GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 - `--use-cpu`: Force CPU usage (GPU is default for statistics)
 - `--n-jobs`: Number of CPU cores (default: 1 for predictions, all cores for statistics)
 - `-g, --genome`: Reference genome (default: hg38)
-- `--context-length`: Sequence context around variants (default: 20bp)
+- `--context-length`: Sequence context around variants (default: 10bp)
 - `--wildcard`: Replace 'N' with T/G/C/A (default: return NA for sequences with N)
 
 ## Output Format
 
 The output CSV contains all users' original columns plus:
 
-- `ref_sequence`, `alt_sequence`: The extracted sequences
+- `ref_sequence`, `alt_sequence`: The extracted context sequences
 - `model`: Which model was used
 - `predicted_effect`: How much the variant changes binding
 - `z_score`, `p_value`: Statistical significance (if `--compute-stats` used)
@@ -108,7 +110,7 @@ The output CSV contains all users' original columns plus:
 - Extension: `.weights.qbic`
 - Example: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic`
 
-### Covariance Files  
+### Covariance Files (Optional)
 - Extension: `.cov.qbic`
 - Must match model names: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov.qbic`
 
@@ -137,7 +139,7 @@ Create text files with one path per line:
 
 **"Covariance matrix not found"**
 - Check that covariance file names match model names
-- Make sure files exist and are readable
+- Make sure the file paths exist in input text files
 
 **Slow performance**
 - For predictions: try single CPU (`--n-jobs 1`)
@@ -146,7 +148,6 @@ Create text files with one path per line:
 ### Error Reports
 The script creates detailed error logs when things go wrong:
 - `qbic_error_report_YYYYMMDD_HHMMSS.log`
-- Contains specific error details and suggestions
 
 ## Dependencies
 
