@@ -11,7 +11,8 @@ python qbic_predict.py -v example_sequence_input.csv \
 -m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
 -o results.csv
 
-# Add statistical testing (p-values and z-scores). We highly recommend using GPU (default) for this step or use multiple CPU cores for small datasets.
+# Add statistical testing (p-values and z-scores). 
+# We highly recommend using GPU (default) for this step or use multiple CPU cores for small datasets.
 python qbic_predict.py -v example_variant_input.csv \
 -m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
 -c example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov.qbic \
@@ -53,11 +54,11 @@ GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 ```
 ## Data Availability
 
-We provide example models in the `example_models` directory. The example covariance matrices are available download from Zenodo (https://zenodo.org/xxxx).
-For complete QBiC-SELEX models, we provide two collections (Zenodo link: https://zenodo.org/xxxx):
+We provide example models in the `example_models` directory. The example covariance matrices are available download ([link](https://zenodo.org/xxxx)).
+For complete QBiC-SELEX models and corresponding covariance matrices, we provide two collections of models ([link](https://zenodo.org/xxxx)):
 
 - **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF.
-- **Secondary Model Collection**: Models curated against SNP-SELEX data if primary models perform poorly.
+- **Secondary Model Collection**: Models curated against SNP-SELEX data. 
 
 We also provide models to TF and TF to models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. You can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
 
@@ -160,5 +161,6 @@ cupy cudf cuml
 ```
 
 ### Reference Genome
-Put genome files in `genome/`, the genome file should be `hg38.fa` or `hg19.fa`.
+Genome files are required in the `genome/` directory if you have variant coordinates as input.
+The genome file should be `hg38.fa` or `hg19.fa`.
 
