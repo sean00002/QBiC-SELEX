@@ -2,11 +2,11 @@
 
 A Python script for predicting how genetic variants affect transcription factor binding using QBIC-SELEX models. Supports single model and batch processing with optional statistical testing.
 
-We provide example models in the `example_models` directory. The example covariance matrices are available download ([link](https://zenodo.org/xxxx)).
-For complete QBiC-SELEX models and corresponding covariance matrices, we provide two collections of models ([link](https://zenodo.org/xxxx)):
+The example models are in the `example_models` directory, and the corresponding [example covariance matrices](https://zenodo.org/xxxx) are available for download.
+We carefully curated two collections of final QBiC-SELEX models:
 
-- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF.
-- **Secondary Model Collection**: Models curated against SNP-SELEX data. 
+- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF. [link](https://zenodo.org/xxxx)
+- **Secondary Model Collection**: Models curated against SNP-SELEX data. [link](https://zenodo.org/xxxx)
 
 We also provide models to TF and TF to models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. You can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
 
