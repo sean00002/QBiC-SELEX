@@ -2,6 +2,19 @@
 
 A Python script for predicting how genetic variants affect transcription factor binding using QBIC-SELEX models. Supports single model and batch processing with optional statistical testing.
 
+We provide example models in the `example_models` directory. The example covariance matrices are available download ([link](https://zenodo.org/xxxx)).
+For complete QBiC-SELEX models and corresponding covariance matrices, we provide two collections of models ([link](https://zenodo.org/xxxx)):
+
+- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF.
+- **Secondary Model Collection**: Models curated against SNP-SELEX data. 
+
+We also provide models to TF and TF to models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. You can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
+
+- **Scenario 1**: When you have a list of interested variants, you can use run all of the QBiC-SELEX models on them, and use the `models_to_TF.txt` file to get the transcription factors that the models are for.
+
+- **Scenario 2**: When you have a list of interested TFs, you can use the `TF_to_models.txt` file to get the models that are for them. 
+
+
 ## Quick Start
 
 ### Example Usage
@@ -52,19 +65,6 @@ ref_sequence,alt_sequence
 ATCGATCGATCGATCGATCG,ATCGATCGACCGATCGATCG
 GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 ```
-## Data Availability
-
-We provide example models in the `example_models` directory. The example covariance matrices are available download ([link](https://zenodo.org/xxxx)).
-For complete QBiC-SELEX models and corresponding covariance matrices, we provide two collections of models ([link](https://zenodo.org/xxxx)):
-
-- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF.
-- **Secondary Model Collection**: Models curated against SNP-SELEX data. 
-
-We also provide models to TF and TF to models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. You can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
-
-- **Scenario 1**: When you have a list of interested variants, you can use run all of the QBiC-SELEX models on them, and use the `models_to_TF.txt` file to get the transcription factors that the models are for.
-
-- **Scenario 2**: When you have a list of interested TFs, you can use the `TF_to_models.txt` file to get the models that are for them. 
 
 ## Processing Modes
 
