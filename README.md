@@ -2,11 +2,11 @@
 
 A Python script for predicting how genetic variants affect transcription factor binding using QBIC-SELEX models. Supports single model and batch processing with optional statistical testing.
 
-The example models are in the `example_models` directory, and the corresponding [example covariance matrices](https://zenodo.org/xxxx) are available for download.
+The example models are in the `example_models` directory, and the corresponding [example covariance matrices](https://www.dropbox.com/scl/fo/iuyk869geskokbhbunrdj/AJr_1xNjqFZ0YIGNKmbU_Hc?rlkey=te8ienggqtsng8l134s8nxe7b&st=0hhr2yaq&dl=0) are available for download.
 For complete QBiC-SELEX models and corresponding covariance matrices, we have two curated collections:
 
-- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF. ([link](https://zenodo.org/xxxx))
-- **Secondary Model Collection**: Models curated against SNP-SELEX data. ([link](https://zenodo.org/xxxx))
+- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF. ([link](https://www.dropbox.com/scl/fi/x3q0ee2maq4g2lpovz9nv/models_primary_collection.zip?rlkey=05hjixpfjbs4rto7sbnlj5hnw&st=7j8hqxvi&dl=0))
+- **Secondary Model Collection**: Models curated against SNP-SELEX data. ([link](https://www.dropbox.com/scl/fi/fq6lisnpadb07yj7m4a73/models_secondary_collection.zip?rlkey=uzpuovpjfnzreek0j38dc3vee&st=r6kwj5lq&dl=0))
 
 We also provide models to TF and TF to models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. Users can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
 
@@ -153,15 +153,21 @@ The script creates detailed error logs when things go wrong:
 
 ### Required
 ```
-pandas numpy scipy pysam
+python>=3.10
+pandas>=1.5.3
+numpy>=1.26.4
+scipy>=1.12.0
+pysam>=0.21.0
 ```
 
 ### Optional (for GPU)
 ```
-cupy cudf cuml
+cupy>=13.0.0
+cudf>=23.12.01
+cuml>=23.12.00
+pytorch>=2.4.0
 ```
 
 ### Reference Genome
 Genome files are required in the `genome/` directory if you have variant coordinates as input.
-The genome file should be `hg38.fa` or `hg19.fa`.
-
+The genome file should be `h

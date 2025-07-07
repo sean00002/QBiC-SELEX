@@ -46,7 +46,7 @@ except ImportError:
     warnings.warn("tqdm not available. Progress bars will be disabled.")
 
 # Add utils to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'util_scripts'))
 import sequence_utils as utils
 import extract_seq
 
