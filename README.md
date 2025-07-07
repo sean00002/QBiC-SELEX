@@ -150,6 +150,7 @@ The script creates detailed error logs when things go wrong:
 - `qbic_error_report_YYYYMMDD_HHMMSS.log`
 
 ## Dependencies
+Here are the dependencies for the script. Please see details in the `env.yml` file.
 
 ### Required
 ```
