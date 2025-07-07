@@ -26,7 +26,7 @@ We also provide models to TF and TF to models mapping files `TF_to_models.txt` a
 
 # Add statistical testing (p-values and z-scores). 
 # We highly recommend using GPU (default) for this step or use multiple CPU cores for small datasets.
-./qbic_predict.py -v example_variant_input.csv \
+./qbic_predict.py -v example_input_variants.csv \
 -m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
 -c example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov.qbic \
 --compute-stats \
@@ -34,13 +34,13 @@ We also provide models to TF and TF to models mapping files `TF_to_models.txt` a
 
 # Process multiple models without statistics computation
 # example_models_list.txt is a text file with one model path per line
-./qbic_predict.py -v example_sequence_input.csv \
+./qbic_predict.py -v example_input_sequences.csv \
 -m example_models_list.txt \
 -o results.csv
 
 # Process multiple models with statistics computation
 # example_models_list.txt and example_covs_list.txt are text files with one model or covariance matrix path per line
-./qbic_predict.py -v example_variant_input.csv \
+./qbic_predict.py -v example_input_variants.csv \
 -m example_models_list.txt \
 -c example_covs_list.txt \
 --compute-stats \
@@ -50,7 +50,7 @@ We also provide models to TF and TF to models mapping files `TF_to_models.txt` a
  
 Users can provide variants in two ways:
 
-### Option 1: Variant Coordinates
+### Option 1: Variant Coordinates (example_input_variants.csv)
 Provide chromosome, position, and alleles - context sequences will be extracted automatically (genome file is needed in the `genome/` directory in this case):
 
 ```csv
@@ -59,7 +59,7 @@ chr1,1000,A,T
 chr2,5000,G,C
 ```
 
-### Option 2: Pre-extracted Context Sequences
+### Option 2: Pre-extracted Context Sequences (example_input_sequences.csv)
 If users already have context sequences, they can provide them directly:
 
 ```csv
