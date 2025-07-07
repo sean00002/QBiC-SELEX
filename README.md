@@ -170,4 +170,5 @@ pytorch>=2.4.0
 
 ### Reference Genome
 Genome files are required in the `genome/` directory if you have variant coordinates as input.
-The genome file should be `h
+The genome file should be `hg38.fa` or `hg19.fa`.
+
