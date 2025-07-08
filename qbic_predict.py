@@ -46,7 +46,7 @@ except ImportError:
     warnings.warn("tqdm not available. Progress bars will be disabled.")
 
 # Add utils to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'util_scripts'))
+sys.path.append(os.path.join(os.path.dirname(__file__),'util_scripts'))
 import sequence_utils as utils
 import extract_seq
 
@@ -318,23 +318,19 @@ def qbic_predict_vectorized(model_dict: Dict[str, float], alt_seqs: List[List[st
     
     Args:
         model_dict: Dictionary mapping k-mers to coefficients
-        alt_seqs: List of alternate sequences
-        ref_seqs: List of reference sequences
+        alt_seqs: List of alternate k-mer lists
+        ref_seqs: List of reference k-mer lists
         wildcard: Nucleotide to replace 'N' with (T, G, C, A, or None for NA)
         
     Returns:
         Tuple of (array of predicted effect sizes, number of NA sequences)
     """
-    # Check if sequences contain 'N' and wildcard is None
+    # Check if k-mers contain 'N' and wildcard is None
     na_count = 0
     if wildcard is None:
         for alt_seq, ref_seq in zip(alt_seqs, ref_seqs):
             if any('N' in kmer for kmer in alt_seq) or any('N' in kmer for kmer in ref_seq):
                 na_count += 1
-        
-        if na_count > 0:
-            # Return NA for all predictions if any sequence contains N
-            return np.full(len(alt_seqs), np.nan), na_count
     
     # Use optimized approach while maintaining same results
     replacement = wildcard if wildcard is not None else 'A'
@@ -348,6 +344,11 @@ def qbic_predict_vectorized(model_dict: Dict[str, float], alt_seqs: List[List[st
     predictions = np.zeros(len(alt_seqs), dtype=np.float32)
     
     for i, (alt_seq, ref_seq) in enumerate(zip(alt_seqs, ref_seqs)):
+        # Check if this specific sequence contains 'N' and wildcard is None
+        if wildcard is None and (any('N' in kmer for kmer in alt_seq) or any('N' in kmer for kmer in ref_seq)):
+            predictions[i] = np.nan
+            continue
+        
         # Replace N and compute sums
         alt_sum = 0.0
         ref_sum = 0.0
@@ -910,6 +911,30 @@ def read_covariance_paths_from_file(cov_file: str) -> Dict[str, str]:
     
     return cov_paths
 
+def count_sequences_with_n(variants_df: pd.DataFrame) -> int:
+    """
+    Count sequences containing 'N' characters.
+    
+    Args:
+        variants_df: DataFrame with variant sequences
+        
+    Returns:
+        Number of sequences containing 'N' characters
+    """
+    # Check if sequences are present
+    if 'ref_sequence' not in variants_df.columns or 'alt_sequence' not in variants_df.columns:
+        # If sequences not present yet, we can't check
+        return 0
+    
+    na_count = 0
+    for _, row in variants_df.iterrows():
+        ref_seq = row['ref_sequence']
+        alt_seq = row['alt_sequence']
+        if 'N' in ref_seq or 'N' in alt_seq:
+            na_count += 1
+    
+    return na_count
+
 def check_sequences_for_n(variants_df: pd.DataFrame, wildcard: Optional[str] = None) -> int:
     """
     Pre-check sequences for 'N' characters and report summary.
@@ -925,19 +950,7 @@ def check_sequences_for_n(variants_df: pd.DataFrame, wildcard: Optional[str] = N
         # If wildcard is specified, no need to check for N
         return 0
     
-    # Check if sequences are present
-    if 'ref_sequence' not in variants_df.columns or 'alt_sequence' not in variants_df.columns:
-        # If sequences not present yet, we can't check
-        return 0
-    
-    na_count = 0
-    for _, row in variants_df.iterrows():
-        ref_seq = row['ref_sequence']
-        alt_seq = row['alt_sequence']
-        if 'N' in ref_seq or 'N' in alt_seq:
-            na_count += 1
-    
-    return na_count
+    return count_sequences_with_n(variants_df)
 
 def validate_batch_inputs(models_file: str, variants_df: pd.DataFrame, 
                          compute_stats: bool = False, cov_file: Optional[str] = None,
@@ -1250,6 +1263,12 @@ Examples:
   
   # Force CPU usage with custom N replacement and 6 cores
   python qbic_predict_final.py -v variants.csv -m model.weights.qbic -c model.cov.qbic -o results.csv --compute-stats --use-cpu --wildcard T --n-jobs 6
+  
+  # Output individual files for each model in a directory (batch processing)
+  python qbic_predict_final.py -v variants.csv -m models.txt -o output_dir/ --output-dir
+  
+  # Output individual file for single model in a directory
+  python qbic_predict_final.py -v variants.csv -m model.weights.qbic -o output_dir/ --output-dir
 
 Input Formats:
   Option 1: Variant information (chrom,pos,ref,alt) - sequences will be extracted
@@ -1286,13 +1305,15 @@ Note: --cov-file is required when using --compute-stats. It can be either:
     # Required arguments
     parser.add_argument("-v", "--variants", required=True, 
                        help="Input variants file (CSV/TSV). Must contain either variant info (chrom,pos,ref,alt) or sequences (ref_sequence,alt_sequence)")
-    parser.add_argument("-o", "--output", required=True, help="Output file path")
+    parser.add_argument("-o", "--output", required=True, help="Output file path or directory (when using --output-dir)")
     
     # Optional arguments
     parser.add_argument("-c", "--cov-file", 
                        help="Path to covariance matrix file (.cov.qbic) or text file containing covariance matrix paths (required when --compute-stats)")
     parser.add_argument("--compute-stats", action="store_true", 
                        help="Compute p-values and z-scores (requires --cov-file)")
+    parser.add_argument("--output-dir", action="store_true",
+                       help="Output individual files for each model in a directory")
     parser.add_argument("--use-gpu", action="store_true", default=None,
                        help="Use GPU for statistical computations (default: True for statistics, False for predictions)")
     parser.add_argument("--use-cpu", action="store_true", 
@@ -1349,6 +1370,12 @@ Note: --cov-file is required when using --compute-stats. It can be either:
         is_single_model = False
         models_file = model_path
     
+    # Validate output directory if --output-dir is specified
+    if args.output_dir:
+        output_path = Path(args.output)
+        if output_path.exists() and not output_path.is_dir():
+            parser.error(f"Output path '{args.output}' exists but is not a directory. Please specify a directory path.")
+    
     # Start timing
     start_time = time.time()
     
@@ -1383,6 +1410,7 @@ Note: --cov-file is required when using --compute-stats. It can be either:
                 print(f"   CPU cores: Single CPU")
             else:
                 print(f"   CPU cores: {args.n_jobs if args.n_jobs != -1 else 'All available'}")
+        print(f"   Output mode: {'Directory (individual files)' if args.output_dir else 'Single file'}")
         if args.wildcard:
             print(f"   N replacement: {args.wildcard}")
         else:
@@ -1407,6 +1435,13 @@ Note: --cov-file is required when using --compute-stats. It can be either:
         else:
             print("Using pre-extracted sequences from input")
         
+        # Report sequences containing 'N'
+        n_count = count_sequences_with_n(variants_df)
+        if n_count > 0:
+            print(f"Found {n_count} sequences containing 'N' characters")
+        else:
+            print("No sequences contain 'N' characters")
+        
         # Make predictions
         print("\nPREDICTION PROCESSING")
         print("-" * 50)
@@ -1430,8 +1465,29 @@ Note: --cov-file is required when using --compute-stats. It can be either:
         # Save results
         print("\nOUTPUT PROCESSING")
         print("-" * 50)
-        print(f"Saving results to: {args.output}")
-        results.to_csv(args.output, index=False)
+        
+        if args.output_dir:
+            # Directory output mode - save individual files
+            output_dir = Path(args.output)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            if is_single_model:
+                # Single model - save with model name
+                model_name = Path(model_path).stem.replace('.weights', '')
+                output_file = output_dir / f"{model_name}.csv"
+                results.to_csv(output_file, index=False)
+                print(f"Saved results to: {output_file}")
+            else:
+                # Batch processing - results already contain model column, split by model
+                for model_name in results['model'].unique():
+                    model_results = results[results['model'] == model_name]
+                    output_file = output_dir / f"{model_name}.csv"
+                    model_results.to_csv(output_file, index=False)
+                    print(f"Saved {model_name}: {output_file.name}")
+        else:
+            # Single file output mode
+            print(f"Saving results to: {args.output}")
+            results.to_csv(args.output, index=False)
         
         # Print summary
         elapsed_time = time.time() - start_time
