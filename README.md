@@ -45,6 +45,12 @@ We also provide models to TF and TF to models mapping files `TF_to_models.txt` a
 -c example_covs_list.txt \
 --compute-stats \
 -o results.csv
+
+# Output individual files for each model in a directory (batch processing)
+./qbic_predict.py -v example_input_variants.csv \
+-m example_models_list.txt \
+-o output_dir/ \
+--output-dir
 ```
 ## Input Formats
  
@@ -89,20 +95,28 @@ GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 ### Optional
 - `-c, --cov-file`: Covariance matrix file(s) for statistics
 - `--compute-stats`: Add p-values and z-scores to output
+- `--output-dir`: Output individual files for each model in a directory (works for both single and batch processing)
 - `--use-cpu`: Force CPU usage (GPU is default for statistics)
 - `--n-jobs`: Number of CPU cores (default: 1 for predictions, all cores for statistics)
 - `-g, --genome`: Reference genome (default: hg38)
 - `--context-length`: Sequence context around variants (default: 10bp)
 - `--wildcard`: Replace 'N' with T/G/C/A (default: return NA for sequences with N)
 
-## Output Format
+## Output Formats
 
-The output CSV contains all users' original columns plus:
-
+### Single File Output (Default)
+When `--output-dir` is not specified, all results are saved to a single CSV file containing:
+- All users' original columns
 - `ref_sequence`, `alt_sequence`: The extracted context sequences
 - `model`: Which model was used
 - `predicted_effect`: How much the variant changes binding
 - `z_score`, `p_value`: Statistical significance (if `--compute-stats` used)
+
+### Directory Output (with `--output-dir`)
+When `--output-dir` is specified, individual files are created for each model:
+- **Single model processing**: Creates `{model_name}.csv` in the specified directory
+- **Batch processing**: Creates separate `{model_name}.csv` files for each model in the specified directory
+- Each file contains the same columns as single file output, but only for that specific model
 
 ## File Organization
 
