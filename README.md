@@ -84,6 +84,10 @@ GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 - **GPU**: Highly recommended (much faster for matrix operations in p-value and z-score computation)
 - **CPU**: Falls back to parallel CPU if GPU unavailable (do not recommend for large datasets)
 
+### Batch Processing for Multiple Models 
+Users can provide a text file with one model path per line, and the script will process all the models in the file.
+If users want to process multiple models with statistics computation, they can provide a text file with one model path per line with `-m` and one covariance matrix path per line with `-c`.
+
 
 ## Command Line Options
 
