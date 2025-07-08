@@ -46,7 +46,7 @@ We also provide models to TF and TF to models mapping files `TF_to_models.txt` a
 --compute-stats \
 -o results.csv
 
-# Output individual files for each model in a directory (batch processing)
+# Output individual files for each model in a directory
 ./qbic_predict.py -v example_input_variants.csv \
 -m example_models_list.txt \
 -o output_dir/ \
