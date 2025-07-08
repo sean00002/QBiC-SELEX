@@ -1,2 +1,3 @@
 *.cov.qbic
 genome/*
+!genome/.gitkeep
