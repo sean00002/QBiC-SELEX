@@ -86,9 +86,9 @@ If users want to compute the p-values and z-scores for the predictions, they can
 - **GPU**: Highly recommended (much faster for matrix operations in p-value and z-score computation)
 - **CPU**: Falls back to parallel CPU if GPU unavailable (do not recommend for large datasets)
 
-### Batch Processing for Multiple Models 
+### Batch Processing for Multiple Models (Automatic)
 Users can provide a text file with one model path per line with `-m`, and the script will process all the models in the text file.
-If users want to process multiple models with statistics computation, they will also need to provide a text file with one covariance matrix path per line with `-c`. The model name must match the covariance matrix name, or match any of the covariance matrix names in the text file.
+If users want to process multiple models with statistics computation, they will also need to provide a text file with one covariance matrix path per line with `-c`. 
 - **CPU**: Single CPU by default (fast for most cases)
 - **GPU**: Highly recommended for statistics computation
 
