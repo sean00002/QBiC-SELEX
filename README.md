@@ -77,16 +77,20 @@ GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 ## Processing Modes
 
 ### Variants Effect Predictions Only (Default)
+By default, the script computes the effect of variants on transcription factor binding only without any statistics computation.
 - **CPU**: Single CPU by default (fast for most cases)
 - **Parallel**: Use `--n-jobs 4` if users want to speed up large datasets
 
 ### Statistics Computation (Optional with `--compute-stats`)
+If users want to compute the p-values and z-scores for the predictions, they can use the `--compute-stats` option, but it requires a covariance matrix file or a text file with one covariance matrix path per line with `-c`. 
 - **GPU**: Highly recommended (much faster for matrix operations in p-value and z-score computation)
 - **CPU**: Falls back to parallel CPU if GPU unavailable (do not recommend for large datasets)
 
 ### Batch Processing for Multiple Models 
-Users can provide a text file with one model path per line, and the script will process all the models in the file.
-If users want to process multiple models with statistics computation, they can provide a text file with one model path per line with `-m` and one covariance matrix path per line with `-c`.
+Users can provide a text file with one model path per line with `-m`, and the script will process all the models in the text file.
+If users want to process multiple models with statistics computation, they will also need to provide a text file with one covariance matrix path per line with `-c`. The model name must match the covariance matrix name, or match any of the covariance matrix names in the text file.
+- **CPU**: Single CPU by default (fast for most cases)
+- **GPU**: Highly recommended for statistics computation
 
 
 ## Command Line Options
