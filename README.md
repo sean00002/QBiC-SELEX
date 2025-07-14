@@ -28,7 +28,7 @@ We also provide models to TF and TF to models mapping files `TF_to_models.txt` a
 # We highly recommend using GPU (default) for this step or use multiple CPU cores for small datasets.
 ./qbic_predict.py -v example_input_variants.csv \
 -m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
--c example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov.qbic \
+-c example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov_8192.npy \
 --compute-stats \
 -o results.csv
 
@@ -89,7 +89,7 @@ If users want to compute the p-values and z-scores for the predictions, they can
 ### Batch Processing for Multiple Models (Automatic)
 Users can provide a text file with one model path per line with `-m`, and the script will process all the models in the text file.
 If users want to process multiple models with statistics computation, they will also need to provide a text file with one covariance matrix path per line with `-c`. 
-- **CPU**: Single CPU by default (fast for most cases)
+- **CPU**: Single CPU by default (fast for most cases) if users do not use `--compute-stats`
 - **GPU**: Highly recommended for statistics computation
 
 
@@ -133,8 +133,8 @@ When `--output-dir` is specified, individual files are created for each model:
 - Example: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic`
 
 ### Covariance Files (Optional)
-- Extension: `.cov.qbic`
-- Must match model names: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov.qbic`
+- Extension: `.cov_{number}.npy`
+- Must match model names: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov_2080.npy`
 
 ### Batch Processing Files
 Create text files with one path per line:
@@ -147,8 +147,8 @@ Create text files with one path per line:
 
 **covariance.txt:**
 ```
-/path/to/model1.cov.qbic
-/path/to/model2.cov.qbic
+/path/to/model1.cov_{number}.npy
+/path/to/model2.cov_{number}.npy
 ```
 
 ## Troubleshooting
