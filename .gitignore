@@ -1,3 +1,6 @@
 *.npy
 genome/*
+example_covs/*
+!example_covs/.gitkeep
 !genome/.gitkeep
+
