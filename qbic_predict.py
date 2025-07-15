@@ -9,7 +9,7 @@ Supports both single model and batch processing with GPU/CPU acceleration.
 Features:
 - Single model and batch processing
 - GPU/CPU parallel processing
-- Automatic sequence extraction from reference genomes
+- Sequence extraction from reference genomes
 - Statistical significance computation (p-values and z-scores)
 - Flexible N handling (NA by default, configurable replacement)
 - Comprehensive error handling and logging
@@ -603,32 +603,32 @@ def predict_batch_models(models_file: str, variants_df: pd.DataFrame,
     
     # Read model paths
     model_paths = read_file_paths(models_file, 'model')
-    print(f"✓ Found {len(model_paths)} models for batch processing")
+            print(f"[OK] Found {len(model_paths)} models for batch processing")
     
     # Check sequences for N characters
     na_count = count_sequences_with_n(variants_df) if wildcard is None else 0
     if na_count > 0:
-        print(f"⚠  Found {na_count} sequences containing 'N' characters")
+        print(f"[WARNING] Found {na_count} sequences containing 'N' characters")
         if wildcard is None:
             print("   These sequences will return NA predictions")
         else:
             print(f"   'N' will be replaced with '{wildcard}'")
     else:
-        print("✓ No sequences contain 'N' characters")
+        print("[OK] No sequences contain 'N' characters")
     
     # Read covariance paths if provided
     cov_paths = {}
     if compute_stats and cov_file is not None:
         if (Path(cov_file).suffix == '.qbic' and 'cov' in Path(cov_file).name) or Path(cov_file).suffix == '.npy':
             # Single covariance matrix file
-            print(f"✓ Using single covariance matrix: {Path(cov_file).name}")
+            print(f"[OK] Using single covariance matrix: {Path(cov_file).name}")
             for model_path in model_paths:
                 model_name = extract_model_name(model_path)
                 cov_paths[model_name] = cov_file
         else:
             # Text file with covariance paths
             cov_paths = read_file_paths(cov_file, 'covariance')
-            print(f"✓ Loaded {len(cov_paths)} covariance matrix paths")
+            print(f"[OK] Loaded {len(cov_paths)} covariance matrix paths")
     
     # Validate model-covariance mapping
     if compute_stats and cov_file is not None:
@@ -645,7 +645,7 @@ def predict_batch_models(models_file: str, variants_df: pd.DataFrame,
             print(f"\n{error_msg}")
             raise RuntimeError(error_msg)
         else:
-            print(f"✓ All {len(model_paths)} models have corresponding covariance matrices")
+            print(f"[OK] All {len(model_paths)} models have corresponding covariance matrices")
     
     print(f"\nProcessing {len(model_paths)} models...")
     print()

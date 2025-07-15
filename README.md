@@ -5,10 +5,11 @@ A Python script for predicting how genetic variants affect transcription factor 
 The example models are in the `example_models` directory, and the corresponding [example covariance matrices](https://www.dropbox.com/scl/fo/iuyk869geskokbhbunrdj/AJr_1xNjqFZ0YIGNKmbU_Hc?rlkey=te8ienggqtsng8l134s8nxe7b&st=0hhr2yaq&dl=0) are available for download.
 For complete QBiC-SELEX models and corresponding covariance matrices, we have two curated collections:
 
-- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF. ([link](https://www.dropbox.com/scl/fi/x3q0ee2maq4g2lpovz9nv/models_primary_collection.zip?rlkey=05hjixpfjbs4rto7sbnlj5hnw&st=7j8hqxvi&dl=0))
-- **Secondary Model Collection**: Models curated against SNP-SELEX data. ([link](https://www.dropbox.com/scl/fi/fq6lisnpadb07yj7m4a73/models_secondary_collection.zip?rlkey=uzpuovpjfnzreek0j38dc3vee&st=r6kwj5lq&dl=0)) 
+- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF. 
+- **Secondary Model Collection**: Models curated against SNP-SELEX data. 
 
-Full models and covariance matrices can be downloaded from the links above and unzip using `tar -I zstd -xvf`.
+Full models and covariance matrices can be downloaded from the links. 
+The covariance matrices for primary model collection are splited into 3 parts. Users can use command `cat covs_primary.tar.zst.part_* > covs_primary.tar.zst` to merge them and unzip using `tar -I zstd -xvf`.
 
 We also provide models to TF and TF to models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. Users can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
 
