@@ -136,7 +136,7 @@ When `--output-dir` is specified, individual files are created for each model:
 
 ### Covariance Files (Optional)
 - Extension: `.cov_{number}.npy`
-- Must match model names: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov_2080.npy`
+- Must match model names: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov_8192.npy`
 
 ### Batch Processing Files
 Create text files with one path per line:
