@@ -8,7 +8,7 @@ For complete QBiC-SELEX models and corresponding covariance matrices, we have tw
 - **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF. 
 - **Secondary Model Collection**: Models curated against SNP-SELEX data. 
 
-All of the models in the primary and secondary collections, their corresponding covariance matrices, and the example covariance matrices can be downloaded from the [Zenodo](https://zenodo.org/record/15891511). All of the files are compressed with zstd, and users can unzip them using `tar -I zstd -xvf`.
+All of the models in the primary and secondary collections, their corresponding covariance matrices, and the example covariance matrices can be downloaded from the [Zenodo](https://zenodo.org/record/15891511). All of the files are compressed with zstd, and users can unzip them using `tar -I zstd -xvf`. Please note that covariance matrices are only required for statistics computation.
 
 We also provide models-to-TF and TF-to-models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. Users can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
 
