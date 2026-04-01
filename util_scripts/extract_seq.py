@@ -44,7 +44,8 @@ def extract_sequence(
     ref: str,
     alt: str,
     context_length: int,
-    genome_file: str
+    genome_file: str,
+    zero_based: bool = False
 ) -> Tuple[str, str]:
     """
     Extract reference and alternate sequences from a reference genome.
@@ -52,23 +53,24 @@ def extract_sequence(
 
     Args:
         chrom: Chromosome name (with or without 'chr' prefix)
-        pos: 1-based position of the variant
+        pos: Position of the variant (1-based by default; 0-based if zero_based=True)
         ref: Reference allele
         alt: Alternate allele
         context_length: Number of base pairs to include on each side of the variant
         genome_file: Path to the reference genome FASTA file or genome name (e.g., 'hg38')
+        zero_based: If True, treat pos as 0-based coordinate (default: False, 1-based)
 
     Returns:
         Tuple of (reference sequence, alternate sequence) in uppercase
     """
     # Get the full path to the genome file
     genome_path = get_genome_path(genome_file)
-    
+
     # Open the FASTA file
     with pysam.FastaFile(genome_path) as fasta:
         # Get list of chromosome names in the reference
         contigs = fasta.references
-        
+
         # Handle chromosome naming (with or without 'chr' prefix)
         orig_chrom = chrom
         if chrom not in contigs:
@@ -76,14 +78,14 @@ def extract_sequence(
                 alt_chrom = chrom[3:]
             else:
                 alt_chrom = f"chr{chrom}"
-            
+
             if alt_chrom in contigs:
                 chrom = alt_chrom
             else:
                 raise ValueError(f"Chromosome {orig_chrom} not found in reference genome")
-        
+
         # Convert to 0-based position for pysam
-        pos_0 = pos - 1
+        pos_0 = pos if zero_based else pos - 1
         
         # Calculate the region to extract
         start = max(0, pos_0 - context_length)
@@ -162,12 +164,13 @@ def batch_extract_sequences(
     chrom_col: str = 'chrom',
     pos_col: str = 'pos',
     ref_col: str = 'ref',
-    alt_col: str = 'alt'
+    alt_col: str = 'alt',
+    zero_based: bool = False
 ) -> pd.DataFrame:
     """
     Extract sequences for a batch of variants, optimized for performance.
     All sequences are returned in uppercase.
-    
+
     Args:
         variants_df: DataFrame containing variant information
         context_length: Number of base pairs to include on each side of the variant
@@ -176,7 +179,8 @@ def batch_extract_sequences(
         pos_col: Column name for position
         ref_col: Column name for reference allele
         alt_col: Column name for alternate allele
-        
+        zero_based: If True, treat positions as 0-based coordinates (default: False, 1-based)
+
     Returns:
         DataFrame with added ref_sequence and alt_sequence columns in uppercase
     """
@@ -230,8 +234,8 @@ def batch_extract_sequences(
                 
                 try:
                     # Convert to 0-based position for pysam
-                    pos_0 = pos - 1
-                    
+                    pos_0 = pos if zero_based else pos - 1
+
                     # Calculate the region to extract
                     start = max(0, pos_0 - context_length)
                     end = pos_0 + len(ref) + context_length
@@ -270,12 +274,13 @@ def extract_sequences_from_df(
     chrom_col: str = 'chrom',
     pos_col: str = 'pos',
     ref_col: str = 'ref',
-    alt_col: str = 'alt'
+    alt_col: str = 'alt',
+    zero_based: bool = False
 ) -> pd.DataFrame:
     """
     Extract reference and alternate sequences for variants in a DataFrame.
     All sequences are returned in uppercase.
-    
+
     Args:
         df: DataFrame containing variant information
         context_length: Number of base pairs to include on each side of the variant
@@ -284,7 +289,8 @@ def extract_sequences_from_df(
         pos_col: Column name for position
         ref_col: Column name for reference allele
         alt_col: Column name for alternate allele
-        
+        zero_based: If True, treat positions as 0-based coordinates (default: False, 1-based)
+
     Returns:
         DataFrame with added ref_sequence and alt_sequence columns in uppercase
     """
@@ -295,7 +301,8 @@ def extract_sequences_from_df(
         chrom_col=chrom_col,
         pos_col=pos_col,
         ref_col=ref_col,
-        alt_col=alt_col
+        alt_col=alt_col,
+        zero_based=zero_based
     )
 
 def extract_sequences_from_range_df(
@@ -391,22 +398,24 @@ def main():
     # Common parameters
     parser.add_argument('--chrom', help='Chromosome')
     parser.add_argument('--genome', default='hg38', help='Reference genome name or path')
-    
+    parser.add_argument('--zero-based', action='store_true',
+                        help='Treat positions as 0-based coordinates (default: 1-based)')
+
     # Create subparsers for different modes
     subparsers = parser.add_subparsers(dest='mode', help='Operation mode')
-    
+
     # Variant mode
     variant_parser = subparsers.add_parser('variant', help='Extract sequence for a single variant')
-    variant_parser.add_argument('--pos', type=int, required=True, help='Position (1-based)')
+    variant_parser.add_argument('--pos', type=int, required=True, help='Position (1-based by default; 0-based with --zero-based)')
     variant_parser.add_argument('--ref', required=True, help='Reference allele')
     variant_parser.add_argument('--alt', required=True, help='Alternate allele')
     variant_parser.add_argument('--context', type=int, default=10, help='Context length on each side')
-    
+
     # Range mode
     range_parser = subparsers.add_parser('range', help='Extract sequence for a genomic range')
     range_parser.add_argument('--start', type=int, required=True, help='Start position (1-based)')
     range_parser.add_argument('--end', type=int, required=True, help='End position (1-based, inclusive)')
-    
+
     # File mode
     file_parser = subparsers.add_parser('file', help='Process a file of variants or ranges')
     file_parser.add_argument('--input-file', required=True, help='Input file')
@@ -419,18 +428,19 @@ def main():
     file_parser.add_argument('--alt-col', default='alt', help='Column name for alternate allele (variant mode)')
     file_parser.add_argument('--start-col', default='start', help='Column name for start position (range mode)')
     file_parser.add_argument('--end-col', default='end', help='Column name for end position (range mode)')
-    
+
     args = parser.parse_args()
-    
+
     # Process based on the mode
     if args.mode == 'variant':
         if not all([args.chrom, args.pos, args.ref, args.alt]):
             parser.print_help()
             return
-        
+
         try:
             ref_seq, alt_seq = extract_sequence(
-                args.chrom, args.pos, args.ref, args.alt, args.context, args.genome
+                args.chrom, args.pos, args.ref, args.alt, args.context, args.genome,
+                zero_based=args.zero_based
             )
             print(f"Reference sequence: {ref_seq}")
             print(f"Alternate sequence: {alt_seq}")
@@ -458,13 +468,14 @@ def main():
         # Process based on file mode
         if args.mode == 'variant':
             results = extract_sequences_from_df(
-                df, 
-                args.context, 
+                df,
+                args.context,
                 args.genome,
                 args.chrom_col,
                 args.pos_col,
                 args.ref_col,
-                args.alt_col
+                args.alt_col,
+                zero_based=args.zero_based
             )
         else:  # range mode
             results = extract_sequences_from_range_df(

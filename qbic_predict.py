@@ -63,6 +63,27 @@ _model_cache = {}
 _cov_cache = {}
 _error_collector = []
 
+# Worker-process globals (set via initializer in ProcessPoolExecutor)
+_worker_partial_dict = None
+_worker_cov_matrix = None
+
+
+def _init_stats_worker(partial_dict, cov_matrix):
+    """Initializer for parallel stats worker processes — sets shared data once per process."""
+    global _worker_partial_dict, _worker_cov_matrix
+    _worker_partial_dict = partial_dict
+    _worker_cov_matrix = cov_matrix
+
+
+def _stats_worker(args):
+    """Module-level worker for parallel CPU statistics computation."""
+    i, alt_kmers, ref_kmers, model_name = args
+    try:
+        result = compute_p_value_cpu(alt_kmers, ref_kmers, _worker_partial_dict, _worker_cov_matrix)
+        return i, result, None
+    except Exception as e:
+        return i, (np.nan, np.nan), f"Variant {i}: {type(e).__name__}: {str(e)}"
+
 # ========================================
 # UTILITY FUNCTIONS
 # ========================================
@@ -260,22 +281,24 @@ def read_file_paths(file_path: str, file_type: str) -> Union[List[str], Dict[str
 # SEQUENCE PROCESSING
 # ========================================
 
-def extract_sequences_from_variants(variants_df: pd.DataFrame, 
+def extract_sequences_from_variants(variants_df: pd.DataFrame,
                                   context_length: int = 20,
-                                  genome: str = "hg38") -> pd.DataFrame:
+                                  genome: str = "hg38",
+                                  zero_based: bool = False) -> pd.DataFrame:
     """Extract reference and alternate sequences for variants."""
     if 'ref_sequence' in variants_df.columns and 'alt_sequence' in variants_df.columns:
         print("Sequences already present in input, skipping extraction")
         return variants_df
-    
+
     required_cols = ['chrom', 'pos', 'ref', 'alt']
     if not all(col in variants_df.columns for col in required_cols):
         raise ValueError(f"Either sequences (ref_sequence, alt_sequence) or variant information ({', '.join(required_cols)}) must be provided")
-    
+
     return extract_seq.batch_extract_sequences(
         variants_df,
         context_length=context_length,
-        genome_file=genome
+        genome_file=genome,
+        zero_based=zero_based
     )
 
 def process_variants_vectorized(df: pd.DataFrame, k: int) -> Tuple[List[List[str]], List[List[str]]]:
@@ -482,26 +505,21 @@ def compute_statistics_parallel(alt_list: List[List[str]], ref_list: List[List[s
                 p_values.append(np.nan)
     else:
         # Parallel processing
-        def compute_stats_worker(args):
-            i, alt_kmers, ref_kmers = args
-            try:
-                return i, compute_p_value_cpu(alt_kmers, ref_kmers, partial_dict, cov_matrix)
-            except Exception as e:
-                error_msg = f"Variant {i}: {type(e).__name__}: {str(e)}"
-                save_error_log("STATS_COMPUTATION_ERROR", error_msg, model_name=model_name)
-                return i, (np.nan, np.nan)
-        
-        args_list = [(i, alt_kmers, ref_kmers) for i, (alt_kmers, ref_kmers) in enumerate(zip(alt_list, ref_list))]
+        args_list = [(i, alt_kmers, ref_kmers, model_name) for i, (alt_kmers, ref_kmers) in enumerate(zip(alt_list, ref_list))]
         t_scores = [np.nan] * len(alt_list)
         p_values = [np.nan] * len(alt_list)
-        
-        with ProcessPoolExecutor(max_workers=n_jobs) as executor:
-            futures = [executor.submit(compute_stats_worker, args) for args in args_list]
-            
+
+        with ProcessPoolExecutor(max_workers=n_jobs,
+                                 initializer=_init_stats_worker,
+                                 initargs=(partial_dict, cov_matrix)) as executor:
+            futures = [executor.submit(_stats_worker, args) for args in args_list]
+
             iterator = tqdm(as_completed(futures), total=len(futures), desc="Computing statistics", unit="variant") if TQDM_AVAILABLE else as_completed(futures)
-            
+
             for future in iterator:
-                i, (t_score, p_value) = future.result()
+                i, (t_score, p_value), error_msg = future.result()
+                if error_msg:
+                    save_error_log("STATS_COMPUTATION_ERROR", error_msg, model_name=model_name)
                 t_scores[i] = t_score
                 p_values[i] = p_value
     
@@ -603,7 +621,7 @@ def predict_batch_models(models_file: str, variants_df: pd.DataFrame,
     
     # Read model paths
     model_paths = read_file_paths(models_file, 'model')
-            print(f"[OK] Found {len(model_paths)} models for batch processing")
+    print(f"[OK] Found {len(model_paths)} models for batch processing")
     
     # Check sequences for N characters
     na_count = count_sequences_with_n(variants_df) if wildcard is None else 0
@@ -753,6 +771,10 @@ Input Formats:
                        help="Nucleotide to replace 'N' with")
     parser.add_argument("--n-jobs", type=int, default=None,
                        help="Number of parallel jobs (default: auto)")
+    parser.add_argument("--pval", type=float, default=None,
+                       help="P-value threshold: only output predictions with p_value <= this value (requires --compute-stats)")
+    parser.add_argument("--zero-based", action="store_true",
+                       help="Treat variant positions as 0-based coordinates (default: 1-based)")
     
     args = parser.parse_args()
     
@@ -773,6 +795,9 @@ Input Formats:
     
     if args.compute_stats and args.cov_file is None:
         parser.error("--compute-stats requires --cov-file")
+
+    if args.pval is not None and not args.compute_stats:
+        parser.error("--pval requires --compute-stats")
     
     # Determine if single model or batch
     model_path = args.model
@@ -814,6 +839,8 @@ Input Formats:
             print(f"   Processing mode: CPU (predictions only)")
         print(f"   Output mode: {'Directory' if args.output_dir else 'Single file'}")
         print(f"   N handling: {'Replace with ' + args.wildcard if args.wildcard else 'Return NA'}")
+        if args.pval is not None:
+            print(f"   P-value filter: p_value <= {args.pval}")
         
         # Sequence processing
         print("\nSEQUENCE PROCESSING")
@@ -825,7 +852,8 @@ Input Formats:
         if not has_sequences:
             print(f"Extracting sequences from genome: {args.genome}")
             variants_df = extract_sequences_from_variants(
-                variants_df, context_length=args.context_length, genome=args.genome
+                variants_df, context_length=args.context_length, genome=args.genome,
+                zero_based=args.zero_based
             )
             print("Sequence extraction completed")
         else:
@@ -854,6 +882,14 @@ Input Formats:
                 args.cov_file, args.use_gpu, args.genome, args.wildcard, args.n_jobs
             )
         
+        # P-value filtering
+        if args.pval is not None and 'p_value' in results.columns:
+            before = len(results)
+            results = results[results['p_value'].notna() & (results['p_value'] <= args.pval)]
+            print(f"\nP-VALUE FILTER (p_value <= {args.pval})")
+            print("-" * 50)
+            print(f"Kept {len(results)} / {before} predictions")
+
         # Output processing
         print("\nOUTPUT PROCESSING")
         print("-" * 50)

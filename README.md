@@ -48,6 +48,14 @@ We also provide models-to-TF and TF-to-models mapping files `TF_to_models.txt` a
 --compute-stats \
 -o results.csv
 
+# Filter output to significant predictions only (requires --compute-stats)
+./qbic_predict.py -v example_input_variants.csv \
+-m example_models_list.txt \
+-c example_covs_list.txt \
+--compute-stats \
+--pval 0.0001 \
+-o results.csv
+
 # Output individual files for each model in a directory
 ./qbic_predict.py -v example_input_variants.csv \
 -m example_models_list.txt \
@@ -105,6 +113,7 @@ If users want to process multiple models with statistics computation, they will 
 ### Optional
 - `-c, --cov-file`: Covariance matrix file(s) for statistics
 - `--compute-stats`: Add p-values and z-scores to output
+- `--pval`: P-value threshold — only output predictions with `p_value <= threshold` (requires `--compute-stats`)
 - `--output-dir`: Output individual files for each model in a directory (works for both single and batch processing)
 - `--use-cpu`: Force CPU usage (GPU is default for statistics)
 - `--n-jobs`: Number of CPU cores (default: 1 for predictions, all cores for statistics)
