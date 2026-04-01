@@ -61,6 +61,12 @@ We also provide models-to-TF and TF-to-models mapping files `TF_to_models.txt` a
 -m example_models_list.txt \
 -o output_dir/ \
 --output-dir
+
+# Use 0-based variant coordinates (e.g., BED-style input)
+./qbic_predict.py -v example_input_variants_0based.csv \
+-m example_models_list.txt \
+-o results.csv \
+--zero-based
 ```
 ## Input Formats
  
@@ -74,6 +80,8 @@ chrom,pos,ref,alt
 chr1,1000,A,T
 chr2,5000,G,C
 ```
+
+By default, positions are **1-based** (VCF-style). Use `--zero-based` if your input uses 0-based coordinates (BED-style).
 
 ### Option 2: Pre-extracted Context Sequences (example_input_sequences.csv)
 If users already have context sequences, they can provide them directly:
@@ -115,6 +123,7 @@ If users want to process multiple models with statistics computation, they will 
 - `--compute-stats`: Add p-values and z-scores to output
 - `--pval`: P-value threshold — only output predictions with `p_value <= threshold` (requires `--compute-stats`)
 - `--output-dir`: Output individual files for each model in a directory (works for both single and batch processing)
+- `--zero-based`: Treat variant positions as 0-based coordinates (default: 1-based/VCF-style)
 - `--use-cpu`: Force CPU usage (GPU is default for statistics)
 - `--n-jobs`: Number of CPU cores (default: 1 for predictions, all cores for statistics)
 - `-g, --genome`: Reference genome (default: hg38)
