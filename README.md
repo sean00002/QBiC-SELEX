@@ -5,7 +5,7 @@ A Python script for predicting how genetic variants affect transcription factor 
 The example models are in the `example_models` directory, and the corresponding covariance matrices `example_covs` are available for download (see below).
 For complete QBiC-SELEX models and corresponding covariance matrices, we have two curated collections:
 
-- **Primary Model Collection**: Independently cross-sample validated models for 1023 transcription factors, one model per TF. 
+- **Primary Model Collection**: Independently cross-sample validated models for 997 transcription factors, one model per TF. 
 - **Secondary Model Collection**: Models curated against SNP-SELEX data. 
 
 All of the models in the primary and secondary collections, their corresponding covariance matrices, and the example covariance matrices can be downloaded from the [IGVF](https://data.igvf.org/model-sets/IGVFDS0925IUTE/) or [Zenodo](https://zenodo.org/record/15891511). Please note that covariance matrices are only required for statistics computation.
