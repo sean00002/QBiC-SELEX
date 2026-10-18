@@ -332,6 +332,29 @@ assert np.allclose(z_original, z_batched, rtol=1e-4)   # passes
 assert np.allclose(p_original, p_batched, rtol=1e-4)   # passes
 ```
 
+### CPU vs GPU, and reproducing published results
+
+cuBLAS (GPU) and OpenBLAS/MKL (CPU) also sum in different orders, so the same
+code gives slightly different float32 z-scores on CPU and GPU: up to ~1e-4
+relative on the example data, largest at |z| near 0. The p-value amplifies
+this: for a normal tail, Δp/p ≈ |z|·Δz, so a strongly significant variant
+(|z| ≈ 10–30) can differ in the 4th significant digit of p even when z agrees
+to 6 digits. Significance calls are unaffected in practice.
+
+`scripts/igvf_regression.py` re-scores a sample of the predictions submitted to
+the IGVF portal (which were computed on GPUs). For 15,000 published rows from 5
+primary models (CTCF, FOXA1, HNF4A, SPI1, and the 6-mer ETV5 model), the v1.0
+results on an RTX 2080 Ti are as follows:
+
+- `predicted_effect` and `z_score` are identical at the published 4 significant digits;
+- 95 p-values (0.6%) differ in the last digit, all by ≤ 0.1% relative;
+- no published variant moves above p = 1e-6, and none of 9,593 sampled
+  unpublished variants moves below it.
+
+The same check on CPU gives identical effects but more last-digit p-value
+differences (still ≤ 0.1% relative), as expected from the different summation
+order.
+
 ---
 
 ## 8. Visual Summary

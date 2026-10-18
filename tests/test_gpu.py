@@ -24,14 +24,23 @@ def kmers(seqs, k):
     return [sliding_window(s, k) for s in seqs]
 
 
+def assert_stats_close(z_gpu, p_gpu, z_cpu, p_cpu):
+    """cuBLAS and OpenBLAS sum in different orders, so float32 results differ slightly.
+
+    p is compared on the -log10 scale: its relative error grows with |z|.
+    """
+    np.testing.assert_allclose(z_gpu, z_cpu, rtol=1e-4, atol=1e-5)
+    with np.errstate(divide="ignore"):   # p underflows to 0 for huge |z| (on both)
+        np.testing.assert_allclose(-np.log10(p_gpu), -np.log10(p_cpu), rtol=1e-3, atol=1e-5)
+
+
 def test_gpu_matches_cpu_toy(toy):
     model = load_model(toy["model"])
     refs, alts = random_pairs(np.random.default_rng(3), 500, 21)
     a, r = kmers(alts, 3), kmers(refs, 3)
     z_cpu, p_cpu = compute_statistics(a, r, model.partial, toy["cov_matrix"], use_gpu=False)
     z_gpu, p_gpu = compute_statistics(a, r, model.partial, toy["cov_matrix"], use_gpu=True, chunk_size=128)
-    np.testing.assert_allclose(z_gpu, z_cpu, rtol=1e-5, atol=1e-7)
-    np.testing.assert_allclose(p_gpu, p_cpu, rtol=1e-4, atol=1e-10)
+    assert_stats_close(z_gpu, p_gpu, z_cpu, p_cpu)
 
 
 def test_gpu_matches_cpu_example_model(example_covs):
@@ -42,5 +51,4 @@ def test_gpu_matches_cpu_example_model(example_covs):
     a, r = kmers(alts, 7), kmers(refs, 7)
     z_cpu, p_cpu = compute_statistics(a, r, model.partial, cov, use_gpu=False)
     z_gpu, p_gpu = compute_statistics(a, r, model.partial, cov, use_gpu=True)
-    np.testing.assert_allclose(z_gpu, z_cpu, rtol=1e-5, atol=1e-6)
-    np.testing.assert_allclose(p_gpu, p_cpu, rtol=1e-3, atol=1e-10)
+    assert_stats_close(z_gpu, p_gpu, z_cpu, p_cpu)
