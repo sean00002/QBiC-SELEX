@@ -28,13 +28,24 @@ except ImportError:  # progress bars are optional
     tqdm = None
 
 
-def gpu_available() -> bool:
-    """True if CuPy is installed and can see a CUDA device."""
+def gpu_check() -> str | None:
+    """None if GPU statistics will work, else the reason they will not.
+
+    Runs a tiny matrix product, so a missing CUDA library (e.g. cuBLAS) shows
+    up here rather than in the middle of a run.
+    """
     try:
         import cupy as cp
-        return cp.cuda.runtime.getDeviceCount() > 0
-    except Exception:
-        return False
+    except ImportError:
+        return "cupy is not installed (pip install 'qbic-selex[gpu]')"
+    try:
+        if cp.cuda.runtime.getDeviceCount() == 0:
+            return "no CUDA device visible"
+        a = cp.ones((4, 4), dtype=cp.float32)
+        float((a @ a).sum())
+        return None
+    except Exception as e:
+        return f"{type(e).__name__}: {e}"
 
 
 def gpu_name() -> str:

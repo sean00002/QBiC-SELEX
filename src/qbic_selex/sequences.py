@@ -145,6 +145,7 @@ def prepare_sequences(df: pd.DataFrame, wildcard: str | None = None
     n = len(df)
     statuses = (df[STATUS_COLUMN].astype(object).to_numpy().copy() if STATUS_COLUMN in df.columns
                 else np.full(n, OK, dtype=object))
+    already_bad = statuses != OK      # reported by extraction already
     ref_out, alt_out = [""] * n, [""] * n
     pairs = zip(df["ref_sequence"].to_numpy(), df["alt_sequence"].to_numpy(), strict=True)
     for i, (r, a) in enumerate(pairs):
@@ -160,5 +161,5 @@ def prepare_sequences(df: pd.DataFrame, wildcard: str | None = None
             statuses[i] = CONTAINS_N if _ACGT.union("N").issuperset(r + a) else INVALID_SEQUENCE
             continue
         ref_out[i], alt_out[i] = r, a
-    _summarize(statuses, "Sequence check")
+    _summarize(statuses[~already_bad], "Sequence check")
     return ref_out, alt_out, statuses

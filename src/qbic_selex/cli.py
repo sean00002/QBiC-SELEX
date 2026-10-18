@@ -1,6 +1,7 @@
 """Command-line interface: ``qbic-selex predict | extract | model-map``."""
 
 import argparse
+import importlib.util
 import logging
 import sys
 import time
@@ -13,7 +14,7 @@ from . import sequences as seqs
 from .models import ModelInputError, model_name_from_path, resolve_covariances, resolve_models
 from .output import error_report_dir, load_model_map, write_model_map
 from .predict import RunConfig, run_models, write_error_report
-from .stats import gpu_available, gpu_name
+from .stats import gpu_check, gpu_name
 
 log = logging.getLogger("qbic_selex")
 
@@ -125,11 +126,15 @@ def run_predict(args) -> int:
 
     use_gpu = False
     if args.compute_stats:
-        has_gpu = gpu_available()
-        if args.device == "gpu" and not has_gpu:
-            raise SystemExit("error: --device gpu but no CUDA GPU is usable (is cupy installed? "
-                             "pip install 'qbic-selex[gpu]')")
-        use_gpu = args.device == "gpu" or (args.device == "auto" and has_gpu)
+        if args.device != "cpu":
+            problem = gpu_check()
+            if problem is None:
+                use_gpu = True
+            elif args.device == "gpu":
+                raise SystemExit(f"error: --device gpu, but the GPU cannot be used: {problem}")
+            elif importlib.util.find_spec("cupy") is not None:
+                # cupy is installed, so the user expects the GPU; say why it is not used
+                log.warning("GPU not usable (%s); computing statistics on CPU", problem)
         log.info("Statistics on %s", f"GPU: {gpu_name()}" if use_gpu else "CPU")
 
     variants = load_variants_with_sequences(args)
