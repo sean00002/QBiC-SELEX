@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qbic-selex"
+dynamic = ["version"]
+description = "Quantitative, bias-corrected prediction of variant effects on transcription factor binding (QBiC-SELEX)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Shengyu Li", email = "sl548@cs.duke.edu" }]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "scipy>=1.11",
+    "pysam>=0.21",
+    "tqdm>=4.60",
+]
+keywords = ["transcription factor", "SELEX", "variant effect", "TF binding", "bioinformatics"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+[project.optional-dependencies]
+gpu = ["cupy-cuda12x>=13.0"]
+dev = ["pytest>=7", "ruff>=0.4"]
+
+[project.scripts]
+qbic-selex = "qbic_selex.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/sean00002/QBiC-SELEX"
+"Models (Zenodo)" = "https://doi.org/10.5281/zenodo.15891511"
+"Models (IGVF)" = "https://data.igvf.org/model-sets/IGVFDS0925IUTE/"
+
+[tool.setuptools.dynamic]
+version = { attr = "qbic_selex.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["gpu: needs a CUDA GPU and cupy (deselected unless -m gpu)"]
+addopts = "-m 'not gpu'"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+extend-exclude = ["legacy"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "RUF013"]
