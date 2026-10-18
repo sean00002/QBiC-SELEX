@@ -347,13 +347,13 @@ primary models (CTCF, FOXA1, HNF4A, SPI1, and the 6-mer ETV5 model), the v1.0
 results on an RTX 2080 Ti are as follows:
 
 - `predicted_effect` and `z_score` are identical at the published 4 significant digits;
-- 95 p-values (0.6%) differ in the last digit, all by ≤ 0.1% relative;
+- 95 p-values (0.6%) differ by one unit in the last published digit (≤ 0.1% relative);
 - no published variant moves above p = 1e-6, and none of 9,593 sampled
   unpublished variants moves below it.
 
-The same check on CPU gives identical effects but more last-digit p-value
-differences (still ≤ 0.1% relative), as expected from the different summation
-order.
+The same check on CPU gives identical effects; 10 z-scores and 690 p-values
+(4.6%) differ by one unit in the last published digit, as expected from the
+different summation order, with the same significance calls.
 
 ---
 
