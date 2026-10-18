@@ -1,252 +1,203 @@
-# QBIC-SELEX: Quantitative, Bias-Corrected Modeling of Variant Effects on Transcription Factor Binding
+# QBiC-SELEX
 
-A Python script for predicting how genetic variants affect transcription factor binding using QBIC-SELEX models. Supports single model and batch processing with optional statistical testing.
+**Quantitative, bias-corrected prediction of variant effects on transcription factor binding.**
 
-The example models are in the `example_models` directory, and the corresponding covariance matrices `example_covs` are available for download (see below).
-For complete QBiC-SELEX models and corresponding covariance matrices, we have two curated collections:
+QBiC-SELEX scores how a genetic variant changes the binding of a transcription
+factor (TF), using k-mer models trained on SELEX data. For each variant and TF
+model it reports the predicted change in binding (`predicted_effect`).
+Optionally it also reports a z-score and a p-value, computed from the model's
+coefficient covariance.
 
-- **Primary Model Collection**: Independently cross-sample validated models for 997 transcription factors, one model per TF. 
-- **Secondary Model Collection**: Models curated against SNP-SELEX data. 
+- **Primary collection:** 997 models, one per human TF, each cross-experiment validated (Table S3).
+- **Secondary collection:** 243 models for 203 TFs, curated against SNP-SELEX data (Table S4).
+- **Mapping files:** model → TF and TF → model, covering 1,111 TFs via CIS-BP (Tables S5 and S6).
 
-All of the models in the primary and secondary collections, their corresponding covariance matrices, and the example covariance matrices can be downloaded from the [IGVF](https://data.igvf.org/model-sets/IGVFDS0925IUTE/) or [Zenodo](https://zenodo.org/record/15891511). Please note that covariance matrices are only required for statistics computation.
+## Install
 
-We also provide models-to-TF and TF-to-models mapping files `TF_to_models.txt` and `models_to_TF.txt` based on CISBP database. Users can use these files to find the models that are for a given TF or the TFs that a given model is mapped to.
-
-- **Scenario 1**: When users have a list of interested variants, they can use run all of the QBiC-SELEX models on them, and use the `models_to_TF.txt` file to find which TFs the variants affect the most.
-
-- **Scenario 2**: When users have a list of interested TFs, they can use the `TF_to_models.txt` file to find which models are for them. 
-
-
-## Quick Start
-
-### Example Usage
 ```bash
-# Predict effects for a single model
-./qbic_predict.py -v example_sequence_input.csv \
--m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
--o results.csv
-
-# Add statistical testing (p-values and z-scores). 
-# We highly recommend using GPU (default) for this step or use multiple CPU cores for small datasets.
-./qbic_predict.py -v example_input_variants.csv \
--m example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic \
--c example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov_8192.npy \
---compute-stats \
--o results.csv
-
-# Process multiple models without statistics computation
-# example_models_list.txt is a text file with one model path per line
-./qbic_predict.py -v example_input_sequences.csv \
--m example_models_list.txt \
--o results.csv
-
-# Process multiple models with statistics computation
-# example_models_list.txt and example_covs_list.txt are text files with one model or covariance matrix path per line
-./qbic_predict.py -v example_input_variants.csv \
--m example_models_list.txt \
--c example_covs_list.txt \
---compute-stats \
--o results.csv
-
-# Filter output to significant predictions only (requires --compute-stats)
-./qbic_predict.py -v example_input_variants.csv \
--m example_models_list.txt \
--c example_covs_list.txt \
---compute-stats \
---pval 0.0001 \
--o results.csv
-
-# Output individual files for each model in a directory
-./qbic_predict.py -v example_input_variants.csv \
--m example_models_list.txt \
--o output_dir/ \
---output-dir
-
-# Use 0-based variant coordinates (e.g., BED-style input)
-./qbic_predict.py -v example_input_variants_0based.csv \
--m example_models_list.txt \
--o results.csv \
---zero-based
-
-# Short output mode for bulk predictions (saves ~78% space)
-# Step 1: Generate model-to-ID mapping (once)
-python generate_model_map.py -m example_models_list.txt -o model_map.csv
-
-# Step 2: Run predictions with compact output
-./qbic_predict.py -v example_input_variants.csv \
--m example_models_list.txt \
--o results.csv \
---short-output --model-map model_map.csv
+pip install qbic-selex            # CPU
+pip install "qbic-selex[gpu]"     # + CuPy with CUDA 12 libraries, for fast statistics on NVIDIA GPUs
 ```
-## Input Formats
- 
-Users can provide variants in two ways:
 
-### Option 1: Variant Coordinates (example_input_variants.csv)
-Provide chromosome, position, and alleles - context sequences will be extracted automatically (genome file is needed in the `genome/` directory in this case):
+Python ≥ 3.10. To run from a clone instead: `pip install -e .`. The scripts
+`qbic_predict.py` and `generate_model_map.py` still work, without installing,
+as wrappers around the same code.
+
+## Get the models
+
+The models, covariance matrices and example covariances are on
+[Zenodo (10.5281/zenodo.15891511)](https://doi.org/10.5281/zenodo.15891511).
+They are also on the [IGVF portal](https://data.igvf.org/model-sets/IGVFDS0925IUTE/).
+
+| File | Size | Contents |
+|---|---|---|
+| `models_primary.tar.zst` | 31 MB | primary-collection model files (`*.weights.qbic`) |
+| `models_secondary.tar.zst` | 7 MB | secondary-collection model files |
+| `example_covs.tar.zst` | 250 MB | covariances for the two example models in this repository |
+| `covs_primary.tar.zst` | 127 GB | covariances for the primary models (only needed for z/p) |
+| `covs_secondary.tar.zst` | 26 GB | covariances for the secondary models |
+
+```bash
+tar -I zstd -xf models_primary.tar.zst     # -> tf_models_primary_collection/
+```
+
+The archives also contain candidate models that were curated out of the final
+collections. To run exactly the published collections, use the lists in
+[`model_lists/`](model_lists) (see [Running a collection](#running-a-collection)).
+
+Covariance matrices are only needed with `--compute-stats`. Each primary 7-mer
+covariance is 128 MB, so extract just the ones you need, e.g.
+`tar -I zstd -xf covs_primary.tar.zst covs_primary/CTCF_FL_TG40NCTGTGG_YWL_jolma2025_0_3_7mer.cov_8192.npy`.
+
+## Quick start
+
+The repository includes two example models (ETV4 and GABPA) and example inputs
+(`git clone https://github.com/sean00002/QBiC-SELEX && cd QBiC-SELEX`):
+
+```bash
+# Effects only, from pre-extracted sequences
+qbic-selex predict -v example_input_sequences.csv -m example_models_list.txt -o results.csv
+
+# With z-scores and p-values (download and unpack example_covs.tar.zst first)
+qbic-selex predict -v example_input_sequences.csv -m example_models_list.txt \
+    -c example_covs --compute-stats -o results.csv
+
+# From variant coordinates (needs a reference genome; see below)
+qbic-selex predict -v example_input_variants.csv -m example_models_list.txt \
+    -c example_covs --compute-stats -g hg38.fa -o results.csv
+```
+
+Reference genomes (UCSC): [hg38](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz),
+[hg19](https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz). Decompress with `gunzip` first.
+`-g` takes a FASTA path, or a name (`hg38`) looked up as `hg38.fa` in
+`$QBIC_SELEX_GENOME_DIR` or `./genome/`.
+
+## Input
+
+A CSV file, or a TSV for `.tsv`/`.txt` names; gzip-compressed is fine. It comes in one of two forms.
+
+**Variant coordinates.** Required columns are `chrom,pos,ref,alt`:
 
 ```csv
 chrom,pos,ref,alt
-chr1,1000,A,T
+chr1,1019636,A,G
 chr2,5000,G,C
 ```
 
-By default, positions are **1-based** (VCF-style). Use `--zero-based` if your input uses 0-based coordinates (BED-style).
+- `pos` is **1-based** (VCF-style) by default. Use `--zero-based` for 0-based (BED-style) positions.
+- `chrom` matches the genome with or without the `chr` prefix.
+- The sequence scored is `--context-length` bases (default 10) on each side of the variant. Indels and multi-base substitutions are supported.
+- Alleles are checked against the genome. A mismatch is reported in `qbic_status` and the row is not scored.
 
-### Option 2: Pre-extracted Context Sequences (example_input_sequences.csv)
-If users already have context sequences, they can provide them directly:
+**Pre-extracted sequences.** Required columns are `ref_sequence,alt_sequence`. They take precedence when both forms are present.
 
 ```csv
 ref_sequence,alt_sequence
 ATCGATCGATCGATCGATCG,ATCGATCGACCGATCGATCG
-GCTAGCTAGCTAGCTAGCTA,GCTAGCTAGATAGCTAGCTA
 ```
 
-## Processing Modes
+Sequences are case-insensitive. A sequence containing `N` gets NA, unless you
+set `--wildcard A|C|G|T` to substitute a base. All other input columns are
+passed through to the output unchanged.
 
-### Variants Effect Predictions Only (Default)
-By default, the script computes the effect of variants on transcription factor binding only without any statistics computation.
-- **CPU**: Single CPU by default (fast for most cases)
-- **Parallel**: Use `--n-jobs 4` if users want to speed up large datasets
+## Output
 
-### Statistics Computation (Optional with `--compute-stats`)
-If users want to compute the p-values and z-scores for the predictions, they can use the `--compute-stats` option, but it requires a covariance matrix file or a text file with one covariance matrix path per line with `-c`. 
-- **GPU**: Highly recommended (much faster for matrix operations in p-value and z-score computation)
-- **CPU**: Falls back to parallel CPU if GPU unavailable (do not recommend for large datasets)
+One row per input row per model:
 
-### Batch Processing for Multiple Models (Automatic)
-Users can provide a text file with one model path per line with `-m`, and the script will process all the models in the text file.
-If users want to process multiple models with statistics computation, they will also need to provide a text file with one covariance matrix path per line with `-c`. 
-- **CPU**: Single CPU by default (fast for most cases) if users do not use `--compute-stats`
-- **GPU**: Highly recommended for statistics computation
+| Column | Meaning |
+|---|---|
+| *(your columns)* | passed through |
+| `ref_sequence`, `alt_sequence` | the sequences that were scored |
+| `model` | model name |
+| `predicted_effect` | change in predicted binding, alt minus ref (positive means stronger binding) |
+| `z_score`, `p_value` | with `--compute-stats`: z = effect / SE, with a two-sided normal p-value |
+| `qbic_status` | `ok`, or why the row has NA (see below) |
 
+`qbic_status` values: `ref_mismatch`, `chrom_not_found`, `out_of_bounds` (too
+close to a contig end for the requested context), `invalid_allele`,
+`missing_value`, `contains_N`, `invalid_sequence`, `shorter_than_k`.
 
-## Command Line Options
+Options:
+- `--pval P` keeps only rows with `p_value <= P` (requires `--compute-stats`).
+- `--output-dir` writes one `<model>.csv` per model into the `-o` directory.
+- `--short-output --model-map MAP` is the compact format for bulk runs: `chrom,pos,ref,alt,model,predicted_effect[,z_score,p_value]`, with integer model IDs and 4 significant digits, about 78% smaller. It contains only scored rows. Make a map with `qbic-selex model-map -m models.txt -o map.csv`, which numbers models alphabetically from 0. [`model_maps/igvf_primary_model_ids.csv`](model_maps/igvf_primary_model_ids.csv) holds the IDs used in the files on the IGVF portal.
 
-### Required
-- `-v, --variants`: Users' input file (CSV/TSV)
-- `-m, --model`: Single model file OR text file with model paths
-- `-o, --output`: Where to save results
+## Statistics
 
-### Optional
-- `-c, --cov-file`: Covariance matrix file(s) for statistics
-- `--compute-stats`: Add p-values and z-scores to output
-- `--pval`: P-value threshold — only output predictions with `p_value <= threshold` (requires `--compute-stats`)
-- `--output-dir`: Output individual files for each model in a directory (works for both single and batch processing)
-- `--zero-based`: Treat variant positions as 0-based coordinates (default: 1-based/VCF-style)
-- `--use-cpu`: Force CPU usage (GPU is default for statistics)
-- `--n-jobs`: Number of CPU cores (default: 1 for predictions, all cores for statistics)
-- `-g, --genome`: Reference genome (default: hg38)
-- `--context-length`: Sequence context around variants (default: 10bp)
-- `--wildcard`: Replace 'N' with T/G/C/A (default: return NA for sequences with N)
-- `--short-output`: Concise output mode — minimal columns (`chrom,pos,ref,alt,model,predicted_effect` + stats if enabled), reduced precision (4 significant digits), and integer model IDs (requires `--model-map`)
-- `--model-map`: Path to model-to-ID mapping CSV generated by `generate_model_map.py` (required with `--short-output`)
+For a variant with k-mer count difference vector *c* (alt minus ref, over the
+model's canonical k-mers), model coefficients *β* and coefficient covariance *Σ*:
 
-## Output Formats
+- effect = *c*·*β*
+- SE = √(*c*ᵀ *Σ* *c*)
+- z = effect / SE
+- p = 2(1 − Φ(|z|))
 
-### Single File Output (Default)
-When `--output-dir` is not specified, all results are saved to a single CSV file containing:
-- All users' original columns
-- `ref_sequence`, `alt_sequence`: The extracted context sequences
-- `model`: Which model was used
-- `predicted_effect`: How much the variant changes binding
-- `z_score`, `p_value`: Statistical significance (if `--compute-stats` used)
+A variant whose effect is exactly 0 gets z = 0 and p = 1. The computation runs in
+batches with float32 linear algebra, on the GPU when available (`--device
+auto|cpu|gpu`). See [docs/statistics.md](docs/statistics.md) for details.
 
-### Directory Output (with `--output-dir`)
-When `--output-dir` is specified, individual files are created for each model:
-- **Single model processing**: Creates `{model_name}.csv` in the specified directory
-- **Batch processing**: Creates separate `{model_name}.csv` files for each model in the specified directory
-- Each file contains the same columns as single file output, but only for that specific model
+`--compute-stats` needs a covariance for every model. `-c` accepts:
+- a directory of `*.cov_<n>.npy` files, matched to models by name;
+- a single file, when running one model;
+- a text file with one covariance path, or `model_path,cov_path`, per line.
 
-### Short Output (with `--short-output`)
-Designed for bulk predictions across many models where file size matters (~78% smaller output). Requires a model mapping file generated by `generate_model_map.py`:
+## Running a collection
+
+`-m` takes a model file, a directory of models, or a text file with one model
+path per line. A list can also give bare model names, which `--model-dir`
+resolves:
 
 ```bash
-# Generate model map (once, before running predictions)
-python generate_model_map.py -m models.txt -o model_map.csv
+qbic-selex predict -v my_variants.csv \
+    -m model_lists/primary_collection.txt --model-dir tf_models_primary_collection \
+    -c covs_primary --compute-stats --pval 1e-6 \
+    --short-output --model-map model_maps/igvf_primary_model_ids.csv \
+    -g hg38.fa -o results.csv
 ```
 
-The mapping file assigns each model a deterministic integer ID (sorted alphabetically):
-```csv
-model_id,model_name
-0,ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer
-1,GABPA_FL_TC40NGCGATT_YWL_jolma2025_0_2_7mer
+Models are processed one at a time, and results are written as each finishes.
+For millions of variants, split the input into chunks and run them as a job
+array, one chunk per task. This is how the IGVF predictions (millions of variants × all
+primary models) were made, on GPU nodes.
+
+If a model fails, for example on a missing or mismatched covariance, it is left
+out of the output and listed in `qbic_error_report_<time>.log` next to the
+output. The run then exits with status 1; use `--allow-failures` to exit 0
+instead.
+
+**Which TFs does a variant affect?** Run all models, then map models to TFs with
+[`mapping_files/TableS5_model_to_tfs_mapping.csv`](mapping_files/TableS5_model_to_tfs_mapping.csv).
+
+**Which models cover my TF?** Look the TF up in
+[`mapping_files/TableS6_tf_to_models_mapping.csv`](mapping_files/TableS6_tf_to_models_mapping.csv).
+It lists each model's validation metrics.
+
+## Commands
+
+```text
+qbic-selex predict    score variants (main command; `qbic-selex predict -h` for all options)
+qbic-selex extract    only extract ref/alt context sequences from a genome
+qbic-selex model-map  make a model ID map for --short-output
 ```
 
-Short output includes only essential columns with reduced precision (4 significant digits):
-```csv
-chrom,pos,ref,alt,model,predicted_effect
-chr1,1019636,A,G,0,0.2659
-```
+## Upgrading from pre-1.0 scripts
 
-When running parallel prediction jobs, all jobs can share the same `--model-map` file to avoid redundant mapping files.
+`qbic_predict.py` (and `qbic_predict_faster.py`) accept the old options.
+`--use-gpu`/`--use-cpu` map to `--device`, and `--n-jobs` is accepted but has
+no effect. Results are unchanged, apart from these fixes:
 
-## File Organization
+- With `--wildcard`, rows containing N now also get z/p. Previously they got NaN.
+- Rows that cannot be scored stay in the output with a `qbic_status` reason. Previously they were dropped.
+- Lowercase sequences are scored correctly. Previously they scored 0.
+- A failed statistics step fails that model. Previously the z/p columns were silently dropped.
 
-### Model Files
-- Extension: `.weights.qbic`
-- Example: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic`
+See [CHANGELOG.md](CHANGELOG.md).
 
-### Covariance Files (Optional)
-- Extension: `.cov_{number}.npy`
-- Must match model names: `ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov_8192.npy`
+## Citation
 
-### Batch Processing Files
-Create text files with one path per line:
+If you use QBiC-SELEX, please cite the paper (citation to be added on
+publication) and the software release; see [CITATION.cff](CITATION.cff).
 
-**models.txt:**
-```
-/path/to/model1.weights.qbic
-/path/to/model2.weights.qbic
-```
+## License
 
-**covariance.txt:**
-```
-/path/to/model1.cov_{number}.npy
-/path/to/model2.cov_{number}.npy
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**"GPU not available"**
-- Script automatically falls back to CPU
-- No action needed unless you specifically need GPU
-
-**"Covariance matrix not found"**
-- Check that covariance file names match model names
-- Make sure the file paths exist in input text files
-
-**Slow performance**
-- For predictions: try single CPU (`--n-jobs 1`)
-- For statistics: ensure GPU is available or use parallel CPU
-
-### Error Reports
-The script creates detailed error logs when things go wrong:
-- `qbic_error_report_YYYYMMDD_HHMMSS.log`
-
-## Dependencies
-Here are the dependencies for the script. Please see details in the `env.yml` file.
-
-### Required
-```
-python>=3.10
-pandas>=1.5.3
-numpy>=1.26.4
-scipy>=1.12.0
-pysam>=0.21.0
-```
-
-### Optional (for GPU)
-```
-cupy>=13.0.0
-cudf>=23.12.01
-cuml>=23.12.00
-pytorch>=2.4.0
-```
-
-### Reference Genome
-Genome files are required in the `genome/` directory if you have variant coordinates as input.
-The genome file should be `hg38.fa` or `hg19.fa`.
-
+MIT. Questions: Shengyu Li (shengyu.li@duke.edu), or open a GitHub issue.

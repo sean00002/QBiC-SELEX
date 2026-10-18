@@ -1,8 +1,10 @@
-# QBiC-SELEX Batched Statistics Optimization
+# QBiC-SELEX statistics: definitions and batched computation
 
 ## Overview
 
-This document explains the batched matrix optimization applied to `qbic_predict_faster.py`, which replaces the per-variant loop in `--compute-stats` with vectorized matrix operations. The result is mathematically identical but orders of magnitude faster for large-scale runs (10M+ variants x 1000+ models).
+This document explains how `--compute-stats` computes z-scores and p-values (`src/qbic_selex/stats.py`).
+
+Before v1.0 there were two scripts: `qbic_predict.py`, which computed the statistics in a per-variant loop, and `qbic_predict_faster.py`, which replaced the loop with batched matrix operations. v1.0 keeps only the batched computation. It is mathematically identical and gives the same results up to float32 rounding (section 7), but is orders of magnitude faster for large runs (10M+ variants x 1000 models). Sections 1-6 compare the two approaches. Where code is shown for the batched version, it is the pre-1.0 `qbic_predict_faster.py`; the v1.0 equivalents are `build_c_matrix()` and `compute_statistics()`.
 
 ---
 
@@ -208,10 +210,10 @@ We cannot build a `(10M, 8192)` matrix. That would be 80 GB in float32. Instead,
 10M variants, chunk_size = 20,000 -> 500 chunks
 
 For each chunk:
-  C       = (20K, 8192)  int8    ->  ~160 MB
+  C       = (20K, 8192)  int16   ->  ~320 MB   (int8 before v1.0, which could overflow)
   C_f     = (20K, 8192)  float32 ->  ~640 MB
   C @ cov = (20K, 8192)  float32 ->  ~640 MB
-  Total per chunk: ~1.4 GB  (fits comfortably in RAM)
+  Total per chunk: ~1.6 GB  (fits comfortably in RAM)
 ```
 
 For the GPU path, chunk_size defaults to 100,000:
@@ -279,17 +281,11 @@ t_chunk[bad_se & ~zero_mask] = np.nan
 p_chunk[bad_se & ~zero_mask] = np.nan
 ```
 
-### Edge case 3: Exception during k-mer processing
+### Edge case 3: Variants that cannot be scored
 
-Original: Per-variant try/except catches any error, returns `(nan, nan)`.
+Original: a per-variant try/except caught errors, e.g. a k-mer containing `N` (`KeyError: 'N'`), and returned `(nan, nan)`.
 
-Batched: During `_build_c_matrix()`, each row is built inside a try/except. If a row fails, it stays as all zeros and its index is recorded in `bad_rows`. After the matrix math:
-
-```python
-for bi in bad_rows:
-    t_chunk[bi] = np.nan
-    p_chunk[bi] = np.nan
-```
+v1.0: sequences are validated before scoring (`sequences.prepare_sequences`), and rows that cannot be scored get a `qbic_status` reason. Only valid rows go into `C`, so no row-level exception handling is needed in the matrix step. Unscored rows get NaN for the effect, z and p. Before v1.0, `--wildcard` was applied to the effect but not to the statistics, so N-containing rows got an effect but NaN z/p. v1.0 applies the substitution once, before both.
 
 ### Why one bad variant cannot affect other rows
 
@@ -366,11 +362,13 @@ This is the single most common performance pattern in scientific Python. Wheneve
 
 ---
 
-## Files
+## Code
 
-| File | Description |
+| Function (`src/qbic_selex/`) | Role |
 |------|-------------|
-| `qbic_predict.py` | Original implementation with per-variant loop |
-| `qbic_predict_faster.py` | Optimized implementation with batched matrix operations |
+| `stats.build_c_matrix` | count-difference matrix C for a chunk of variants (int16) |
+| `stats.compute_statistics` | chunked `C @ beta`, `rowsum((C @ Sigma) * C)`, z, p; NumPy or CuPy |
+| `stats._finish` | p-values and the edge cases above |
+| `predict.score_model` | effects and statistics for one model, valid rows only |
 
-The faster version is a drop-in replacement with the identical CLI interface.
+`tests/test_predict_stats.py` checks the batched statistics against a direct float64 implementation of the original per-variant formula.
