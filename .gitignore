@@ -5,4 +5,14 @@ example_covs/*
 !genome/.gitkeep
 CLAUDE.md
 __pycache__/
+*.py[cod]
 tmp_*.csv
+qbic_error_report_*.log
+
+# Python packaging / tooling
+.venv*/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
