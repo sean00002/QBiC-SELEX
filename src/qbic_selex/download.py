@@ -1,6 +1,8 @@
 """Download and unpack the model collections from Zenodo, verifying checksums."""
 
+import csv
 import hashlib
+import io
 import json
 import logging
 import os
@@ -27,6 +29,10 @@ DATASETS = {
     "primary-covs": ("covs_primary.tar.zst", "covariances for the primary models"),
     "secondary-covs": ("covs_secondary.tar.zst", "covariances for the secondary models"),
 }
+
+# Index of every covariance file inside the covariance archives (archive, byte offset and
+# length of the member's own zstd frame, md5), used to fetch single models.
+INDEX_KEY = "covs_index.csv"
 
 _CHUNK = 8 * 1024 * 1024
 
@@ -122,7 +128,9 @@ def extract_tar_zst(archive: Path, dest: Path) -> int:
 
     dest.mkdir(parents=True, exist_ok=True)
     n = 0
-    with open(archive, "rb") as fh, zstandard.ZstdDecompressor().stream_reader(fh) as zr, \
+    # read_across_frames: archives may hold one zstd frame per member (for single-model fetches)
+    dctx = zstandard.ZstdDecompressor()
+    with open(archive, "rb") as fh, dctx.stream_reader(fh, read_across_frames=True) as zr, \
             tarfile.open(fileobj=zr, mode="r|") as tar:
         kwargs = {"filter": "data"} if hasattr(tarfile, "data_filter") else {}
         for member in _safe_members(tar, dest):
@@ -181,3 +189,83 @@ def download_dataset(name: str, dest: Path, record: str = ZENODO_RECORD, keep_ar
     for remote in remotes:
         _download_one(remote, dest, keep_archive, record_json.get("id", record))
     return dest
+
+
+# ----------------------------------------------------------------------------
+# Single models from the covariance archives
+# ----------------------------------------------------------------------------
+
+def _dataset_stem(name: str) -> str:
+    return DATASETS[name][0].removesuffix(".tar.zst")
+
+
+def fetch_index(files: dict[str, RemoteFile]) -> list[dict]:
+    if INDEX_KEY not in files:
+        raise ValueError(f"this Zenodo record has no {INDEX_KEY}, so single models cannot be fetched; "
+                         f"download the whole dataset, or use a newer record (--record latest)")
+    with _urlopen(files[INDEX_KEY].url) as r:
+        return list(csv.DictReader(io.TextIOWrapper(r, encoding="utf-8")))
+
+
+def _fetch_member(remote: RemoteFile, offset: int, length: int) -> bytes:
+    """One archive member: an HTTP range request for its zstd frame, decompressed."""
+    import zstandard
+
+    with _urlopen(remote.url, {"Range": f"bytes={offset}-{offset + length - 1}"}) as r:
+        if getattr(r, "status", 206) != 206:
+            raise OSError(f"{remote.key}: server ignored the byte-range request (HTTP {r.status})")
+        frame = r.read()
+    if len(frame) != length:
+        raise OSError(f"{remote.key}: got {len(frame)} bytes, expected {length}")
+    return zstandard.ZstdDecompressor().decompress(frame)
+
+
+def download_models(name: str, model_ids: list[str], dest: Path, record: str = ZENODO_RECORD,
+                    record_json: dict | None = None) -> list[Path]:
+    """Fetch the covariance files of selected models from a covariance dataset.
+
+    Each file is read from its own frame inside the archive (HTTP range request),
+    so only the requested models are downloaded. Files are checked against the
+    md5 in the index; files already present with the right md5 are skipped.
+    """
+    if not name.endswith("-covs"):
+        raise ValueError("single models can be fetched only from covariance datasets "
+                         "(the model-file archives are small; download them whole)")
+    record_json = record_json or fetch_record(record)
+    files = record_files(record_json)
+    stem = _dataset_stem(name)
+    rows = {}
+    for row in fetch_index(files):
+        if row["archive"].startswith(stem + "."):
+            rows.setdefault(row["model_id"], row)
+    wanted = list(dict.fromkeys(model_ids))
+    missing = [m for m in wanted if m not in rows]
+    if missing:
+        shown = ", ".join(missing[:5]) + (" ..." if len(missing) > 5 else "")
+        raise ValueError(f"{len(missing)} model(s) not in {name}: {shown}")
+
+    dest.mkdir(parents=True, exist_ok=True)
+    root = dest.resolve()
+    written = []
+    for i, m in enumerate(wanted, 1):
+        row = rows[m]
+        target = (dest / row["member"]).resolve()
+        if root not in target.parents:
+            raise OSError(f"unsafe path in index: {row['member']}")
+        if target.exists() and md5sum(target) == row["md5"]:
+            log.info("[%d/%d] %s already present", i, len(wanted), m)
+            written.append(target)
+            continue
+        log.info("[%d/%d] %s (%.0f MB)", i, len(wanted), m, int(row["length"]) / 1e6)
+        member = _fetch_member(files[row["archive"]], int(row["offset"]), int(row["length"]))
+        with tarfile.open(fileobj=io.BytesIO(member)) as tar:
+            info = tar.next()
+            data = tar.extractfile(info).read()
+        if info.name != row["member"] or hashlib.md5(data).hexdigest() != row["md5"]:
+            raise OSError(f"{m}: downloaded file does not match the index (name or md5)")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_name(target.name + ".part")
+        tmp.write_bytes(data)
+        tmp.rename(target)
+        written.append(target)
+    return written

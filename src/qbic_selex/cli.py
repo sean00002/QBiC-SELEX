@@ -203,6 +203,10 @@ def add_download_args(p: argparse.ArgumentParser) -> None:
                         f"with this software; 'latest' for the newest version)")
     p.add_argument("--keep-archive", action="store_true", help="Keep the .tar.zst after unpacking")
     p.add_argument("--list", action="store_true", help="List the datasets and their sizes, then exit")
+    sel = p.add_argument_group("single models (covariance datasets only)")
+    sel.add_argument("--models", nargs="+", metavar="MODEL",
+                     help="Fetch only these models' covariance files (model IDs or file paths)")
+    sel.add_argument("--model-list", help="Fetch only the models listed in this file (one per line)")
 
 
 def run_download(args) -> int:
@@ -224,6 +228,17 @@ def run_download(args) -> int:
         raise SystemExit(f"error: unknown dataset(s) {', '.join(unknown)}; "
                          f"choose from {', '.join(download.DATASETS)}")
     dest = Path(args.dir)
+    if args.models or args.model_list:
+        ids = list(args.models or [])
+        if args.model_list:
+            with open(args.model_list) as f:
+                ids += [ln.strip() for ln in f if ln.strip() and not ln.startswith("#")]
+        ids = [model_name_from_path(m) for m in ids]
+        if len(args.datasets) != 1:
+            raise SystemExit("error: with --models/--model-list give exactly one covariance dataset")
+        got = download.download_models(args.datasets[0], ids, dest, args.record, record_json=record)
+        log.info("Fetched %d covariance file(s) into %s", len(got), dest)
+        return 0
     for name in args.datasets:
         download.download_dataset(name, dest, args.record, args.keep_archive, record_json=record)
     hints = {"primary": ("tf_models_primary_collection", "model_lists/primary_collection.txt"),
