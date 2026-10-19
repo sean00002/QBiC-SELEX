@@ -14,6 +14,9 @@ First packaged release, accompanying the QBiC-SELEX paper.
 - `--allow-failures`; gzip-compressed input.
 - Final paper tables S3–S6 in `mapping_files/`; collection lists in `model_lists/`
   (997 primary, 243 secondary); the model IDs used on the IGVF portal in `model_maps/`.
+  Model IDs use the original experiment names (as in Table S1 and the Zenodo files).
+  Table S4 has one row per model, with both SNP-SELEX correlations; models retained in
+  both SNP-SELEX batches are `secondary-both-batches` in S5/S6.
 - MIT license, tests (unit, golden outputs, GPU), CI.
 
 ### Fixed

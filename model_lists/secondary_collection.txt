@@ -1,4 +1,4 @@
-# QBiC-SELEX secondary model collection (Table S4): models curated against SNP-SELEX data (unique model IDs).
+# QBiC-SELEX secondary model collection (Table S4): models curated against SNP-SELEX data.
 ATF6B_eDBD_TTCTGT40NAAC_KP_yin2017_0_3_7mer
 ATOH1_eDBD_TCAGCA40NCTC_KO_yin2017_0_2_7mer
 BHLHE23_eDBD_TTCACC40NGCT_KP_yin2017_1_2_6mer
