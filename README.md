@@ -29,25 +29,36 @@ The models, covariance matrices and example covariances are on
 [Zenodo (10.5281/zenodo.15891511)](https://doi.org/10.5281/zenodo.15891511).
 They are also on the [IGVF portal](https://data.igvf.org/model-sets/IGVFDS0925IUTE/).
 
-| File | Size | Contents |
-|---|---|---|
-| `models_primary.tar.zst` | 31 MB | primary-collection model files (`*.weights.qbic`) |
-| `models_secondary.tar.zst` | 7 MB | secondary-collection model files |
-| `example_covs.tar.zst` | 250 MB | covariances for the two example models in this repository |
-| `covs_primary.tar.zst` | 127 GB | covariances for the primary models (only needed for z/p) |
-| `covs_secondary.tar.zst` | 26 GB | covariances for the secondary models |
+Download them with `qbic-selex download`, which checks each file's checksum
+against Zenodo, resumes interrupted downloads, and unpacks into
+`./qbic_selex_data` (change it with `-o DIR`):
 
 ```bash
-tar -I zstd -xf models_primary.tar.zst     # -> tf_models_primary_collection/
+qbic-selex download primary secondary     # model files, 38 MB
+qbic-selex download example-covs          # covariances for the two example models, 250 MB
+qbic-selex download --list                # all datasets and their sizes
 ```
+
+| Dataset | Zenodo file | Size | Contents |
+|---|---|---|---|
+| `primary` | `models_primary.tar.zst` | 31 MB | primary-collection model files (`*.weights.qbic`) |
+| `secondary` | `models_secondary.tar.zst` | 7 MB | secondary-collection model files |
+| `example-covs` | `example_covs.tar.zst` | 250 MB | covariances for the two example models in this repository |
+| `primary-covs` | `covs_primary.tar.zst` | 127 GB | covariances for the primary models (only needed for z/p) |
+| `secondary-covs` | `covs_secondary.tar.zst` | 26 GB | covariances for the secondary models |
+
+By default it downloads from the Zenodo version this release was made with;
+`--record latest` follows the newest version. Unpacking needs about twice the
+archive size in free space, briefly (`--keep-archive` keeps the `.tar.zst`).
 
 The archives also contain candidate models that were curated out of the final
 collections. To run exactly the published collections, use the lists in
 [`model_lists/`](model_lists) (see [Running a collection](#running-a-collection)).
 
 Covariance matrices are only needed with `--compute-stats`. Each primary 7-mer
-covariance is 128 MB, so extract just the ones you need, e.g.
-`tar -I zstd -xf covs_primary.tar.zst covs_primary/CTCF_FL_TG40NCTGTGG_YWL_jolma2025_0_3_7mer.cov_8192.npy`.
+covariance is 128 MB. To get only some of them, download the archive from
+Zenodo yourself and extract just those files, e.g.
+`tar -m -I zstd -xf covs_primary.tar.zst covs_primary/CTCF_FL_TG40NCTGTGG_YWL_jolma2025_0_3_7mer.cov_8192.npy`.
 
 ## Quick start
 
@@ -149,8 +160,8 @@ resolves:
 
 ```bash
 qbic-selex predict -v my_variants.csv \
-    -m model_lists/primary_collection.txt --model-dir tf_models_primary_collection \
-    -c covs_primary --compute-stats --pval 1e-6 \
+    -m model_lists/primary_collection.txt --model-dir qbic_selex_data/tf_models_primary_collection \
+    -c qbic_selex_data/covs_primary --compute-stats --pval 1e-6 \
     --short-output --model-map model_maps/igvf_primary_model_ids.csv \
     -g hg38.fa -o results.csv
 ```
@@ -178,6 +189,7 @@ It lists each model's validation metrics.
 qbic-selex predict    score variants (main command; `qbic-selex predict -h` for all options)
 qbic-selex extract    only extract ref/alt context sequences from a genome
 qbic-selex model-map  make a model ID map for --short-output
+qbic-selex download   download and unpack model collections from Zenodo
 ```
 
 ## Upgrading from pre-1.0 scripts

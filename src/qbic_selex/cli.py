@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 from . import __version__
+from . import download
 from . import sequences as seqs
 from .models import ModelInputError, model_name_from_path, resolve_covariances, resolve_models
 from .output import error_report_dir, load_model_map, write_model_map
@@ -192,6 +193,43 @@ def run_model_map(args) -> int:
     return 0
 
 
+def add_download_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("datasets", nargs="*", metavar="DATASET",
+                   help=f"One or more of: {', '.join(download.DATASETS)}")
+    p.add_argument("-o", "--dir", default="qbic_selex_data",
+                   help="Where to unpack (default: ./qbic_selex_data)")
+    p.add_argument("--record", default=download.ZENODO_RECORD,
+                   help=f"Zenodo record ID (default: {download.ZENODO_RECORD}, the version released "
+                        f"with this software; 'latest' for the newest version)")
+    p.add_argument("--keep-archive", action="store_true", help="Keep the .tar.zst after unpacking")
+    p.add_argument("--list", action="store_true", help="List the datasets and their sizes, then exit")
+
+
+def run_download(args) -> int:
+    record = download.fetch_record(args.record)
+    files = download.record_files(record)
+    if args.list or not args.datasets:
+        print(f"Zenodo record {record['id']} (doi:{record['doi']}):")
+        for name, (key, what) in download.DATASETS.items():
+            size = f"{files[key].size / 1e9:8.2f} GB" if key in files else "  not in record"
+            print(f"  {name:15s} {size}  {what}")
+        return 0
+    unknown = [d for d in args.datasets if d not in download.DATASETS]
+    if unknown:
+        raise SystemExit(f"error: unknown dataset(s) {', '.join(unknown)}; "
+                         f"choose from {', '.join(download.DATASETS)}")
+    dest = Path(args.dir)
+    for name in args.datasets:
+        download.download_dataset(name, dest, args.record, args.keep_archive, record_json=record)
+    hints = {"primary": ("tf_models_primary_collection", "model_lists/primary_collection.txt"),
+             "secondary": ("tf_models_secondary_collection", "model_lists/secondary_collection.txt")}
+    for name in args.datasets:
+        if name in hints:
+            sub, lst = hints[name]
+            log.info("Run the %s collection with: -m %s --model-dir %s", name, lst, dest / sub)
+    return 0
+
+
 # ----------------------------------------------------------------------------
 
 def build_parser() -> argparse.ArgumentParser:
@@ -207,6 +245,7 @@ def build_parser() -> argparse.ArgumentParser:
         ("predict", add_predict_args, run_predict, "Predict variant effects (main command)"),
         ("extract", add_extract_args, run_extract, "Only extract ref/alt context sequences"),
         ("model-map", add_model_map_args, run_model_map, "Make a model ID map for --short-output"),
+        ("download", add_download_args, run_download, "Download model collections from Zenodo"),
     ]:
         p = sub.add_parser(name, help=help_, description=help_)
         add(p)
