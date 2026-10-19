@@ -210,8 +210,13 @@ def run_download(args) -> int:
     files = download.record_files(record)
     if args.list or not args.datasets:
         print(f"Zenodo record {record['id']} (doi:{record['doi']}):")
-        for name, (key, what) in download.DATASETS.items():
-            size = f"{files[key].size / 1e9:8.2f} GB" if key in files else "  not in record"
+        for name, (_, what) in download.DATASETS.items():
+            parts = download.dataset_files(name, files)
+            size = "  not in record"
+            if parts:
+                size = f"{sum(f.size for f in parts) / 1e9:8.2f} GB"
+                if len(parts) > 1:
+                    size += f" ({len(parts)} parts)"
             print(f"  {name:15s} {size}  {what}")
         return 0
     unknown = [d for d in args.datasets if d not in download.DATASETS]

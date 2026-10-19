@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import tarfile
 import time
@@ -134,40 +135,49 @@ def _marker(dest: Path, key: str) -> Path:
     return dest / f".{key}.qbic-selex-download.json"
 
 
-def download_dataset(name: str, dest: Path, record: str = ZENODO_RECORD, keep_archive: bool = False,
-                     record_json: dict | None = None) -> Path:
-    """Download one dataset (see DATASETS) into ``dest`` and unpack it. Returns ``dest``."""
+def dataset_files(name: str, files: dict[str, RemoteFile]) -> list[RemoteFile]:
+    """The record files making up a dataset: ``stem.tar.zst``, or its parts ``stem.partNN.tar.zst``."""
     key = DATASETS[name][0]
-    record_json = record_json or fetch_record(record)
-    files = record_files(record_json)
-    if key not in files:
-        raise ValueError(f"{key} is not in Zenodo record {record_json.get('id', record)}")
-    remote = files[key]
+    if key in files:
+        return [files[key]]
+    stem = key.removesuffix(".tar.zst")
+    parts = sorted(k for k in files if re.fullmatch(re.escape(stem) + r"\.part\d+\.tar\.zst", k))
+    return [files[k] for k in parts]
 
-    dest.mkdir(parents=True, exist_ok=True)
-    marker = _marker(dest, key)
+
+def _download_one(remote: RemoteFile, dest: Path, keep_archive: bool, record_id) -> None:
+    marker = _marker(dest, remote.key)
     if marker.exists() and json.loads(marker.read_text()).get("md5") == remote.md5:
-        log.info("%s already downloaded and unpacked in %s", key, dest)
-        return dest
-
-    need = remote.size * (2 if not keep_archive else 2.05)
+        log.info("%s already downloaded and unpacked in %s", remote.key, dest)
+        return
+    need = remote.size * (2.05 if keep_archive else 2)
     free = shutil.disk_usage(dest).free
     if free < need:
         log.warning("%s needs about %.1f GB (archive + unpacked); %.1f GB free in %s",
-                    key, need / 1e9, free / 1e9, dest)
-
-    archive = dest / key
+                    remote.key, need / 1e9, free / 1e9, dest)
+    archive = dest / remote.key
     if archive.exists() and remote.md5 and md5sum(archive) == remote.md5:
         log.info("Using existing %s", archive)
     else:
-        log.info("Downloading %s (%.2f GB) from Zenodo record %s", key, remote.size / 1e9,
-                 record_json.get("id", record))
+        log.info("Downloading %s (%.2f GB) from Zenodo record %s", remote.key, remote.size / 1e9, record_id)
         download_file(remote, archive)
     log.info("Checksum OK; unpacking into %s", dest)
     n = extract_tar_zst(archive, dest)
-    marker.write_text(json.dumps({"key": key, "md5": remote.md5, "record": record_json.get("id"),
+    marker.write_text(json.dumps({"key": remote.key, "md5": remote.md5, "record": record_id,
                                   "files": n, "unpacked": time.strftime("%Y-%m-%d %H:%M:%S")}))
     if not keep_archive:
         os.remove(archive)
-    log.info("Unpacked %d files from %s", n, key)
+    log.info("Unpacked %d files from %s", n, remote.key)
+
+
+def download_dataset(name: str, dest: Path, record: str = ZENODO_RECORD, keep_archive: bool = False,
+                     record_json: dict | None = None) -> Path:
+    """Download one dataset (see DATASETS) into ``dest`` and unpack it. Returns ``dest``."""
+    record_json = record_json or fetch_record(record)
+    remotes = dataset_files(name, record_files(record_json))
+    if not remotes:
+        raise ValueError(f"{DATASETS[name][0]} is not in Zenodo record {record_json.get('id', record)}")
+    dest.mkdir(parents=True, exist_ok=True)
+    for remote in remotes:
+        _download_one(remote, dest, keep_archive, record_json.get("id", record))
     return dest

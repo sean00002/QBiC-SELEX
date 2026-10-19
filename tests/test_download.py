@@ -93,3 +93,15 @@ def test_record_files_parses_zenodo_json():
     f = download.record_files(rec)["a.tar.zst"]
     assert (f.size, f.md5, f.url) == (3, "abc", "u")
     assert json.dumps(rec)
+
+
+def test_dataset_split_into_parts(tmp_path, toy):
+    src = tmp_path / "src"
+    src.mkdir()
+    p1 = make_archive(src / "covs_primary.part01.tar.zst", {"covs_primary/A.cov_32.npy": b"a"})
+    p2 = make_archive(src / "covs_primary.part02.tar.zst", {"covs_primary/B.cov_32.npy": b"b"})
+    rec = fake_record(p1)
+    rec["files"] += fake_record(p2)["files"]
+    dest = tmp_path / "data"
+    download.download_dataset("primary-covs", dest, record_json=rec)
+    assert sorted(p.name for p in (dest / "covs_primary").iterdir()) == ["A.cov_32.npy", "B.cov_32.npy"]
