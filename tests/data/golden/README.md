@@ -2,8 +2,12 @@
 
 Results of running QBiC-SELEX on the repository's example inputs with the two
 example models (`example_models/`). `tests/test_golden.py` re-runs these
-scenarios and compares (rtol 1e-6, atol 1e-9; `--short-output` must match
-exactly).
+scenarios and compares them: effects and all other columns within rtol 1e-6;
+z-scores within rtol/atol 1e-5 and p-values within 1e-4 on the -log10 scale
+(in `--short-output`, one unit in the 4th significant digit). z and p come
+from float32 BLAS products, whose rounding depends on the CPU kernel and BLAS
+build: across OpenBLAS kernels on one machine, z differed by up to 4e-7
+relative, -log10 p by up to 5e-5, and 3 short-output rows by one last digit.
 
 | File | Command (all `--device cpu`) |
 |---|---|
