@@ -4,6 +4,14 @@ title: "QBiC-SELEX: quantitative, bias-corrected modeling of variant effects on 
 type: software
 version: 1.0.0
 date-released: 2026-10-20
+doi: 10.5281/zenodo.23503568
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23503568
+    description: "QBiC-SELEX software, all versions (concept DOI)"
+  - type: doi
+    value: 10.5281/zenodo.23503569
+    description: "QBiC-SELEX software v1.0.0"
 license: MIT
 repository-code: "https://github.com/sean00002/QBiC-SELEX"
 authors:
@@ -17,5 +25,11 @@ keywords:
   - variant effect prediction
 references:
   - type: data
-    title: "QBiC-SELEX models and covariance matrices"
+    title: "QBiC-SELEX model weights and covariance matrices"
+    version: "2.0"
     doi: 10.5281/zenodo.23482275
+    authors:
+      - family-names: Li
+        given-names: Shengyu
+      - family-names: Gordan
+        given-names: Raluca
