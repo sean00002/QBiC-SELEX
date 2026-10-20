@@ -25,40 +25,43 @@ as wrappers around the same code.
 
 ## Get the models
 
-The models, covariance matrices and example covariances are on
-[Zenodo (10.5281/zenodo.15891511)](https://doi.org/10.5281/zenodo.15891511).
-They are also on the [IGVF portal](https://data.igvf.org/model-sets/IGVFDS0925IUTE/).
+The models and covariance matrices are on
+[Zenodo (10.5281/zenodo.23482275)](https://doi.org/10.5281/zenodo.23482275): exactly the
+997 primary and 243 secondary models described in the paper. They are also on the
+[IGVF portal](https://data.igvf.org/model-sets/IGVFDS0925IUTE/), one file per model.
 
 Download them with `qbic-selex download`, which checks each file's checksum
 against Zenodo, resumes interrupted downloads, and unpacks into
 `./qbic_selex_data` (change it with `-o DIR`):
 
 ```bash
-qbic-selex download primary secondary     # model files, 38 MB
+qbic-selex download primary secondary     # model files, 37 MB
 qbic-selex download example-covs          # covariances for the two example models, 250 MB
 qbic-selex download --list                # all datasets and their sizes
 ```
 
-| Dataset | Zenodo file | Size | Contents |
+| Dataset | Zenodo file(s) | Size | Contents |
 |---|---|---|---|
-| `primary` | `models_primary.tar.zst` | 31 MB | primary-collection model files (`*.weights.qbic`) |
-| `secondary` | `models_secondary.tar.zst` | 7 MB | secondary-collection model files |
+| `primary` | `models_primary.tar.zst` | 30 MB | 997 primary model files (`*.weights.qbic`) |
+| `secondary` | `models_secondary.tar.zst` | 6.5 MB | 243 secondary model files |
 | `example-covs` | `example_covs.tar.zst` | 250 MB | covariances for the two example models in this repository |
-| `primary-covs` | `covs_primary.tar.zst` | 127 GB | covariances for the primary models (only needed for z/p) |
-| `secondary-covs` | `covs_secondary.tar.zst` | 26 GB | covariances for the secondary models |
+| `primary-covs` | `covs_primary.part01`–`07.tar.zst` | 124 GB | covariances for the primary models (only needed for z/p) |
+| `secondary-covs` | `covs_secondary.tar.zst` | 25 GB | covariances for the secondary models |
 
-By default it downloads from the Zenodo version this release was made with;
-`--record latest` follows the newest version. Unpacking needs about twice the
-archive size in free space, briefly (`--keep-archive` keeps the `.tar.zst`).
+Covariance matrices are only needed with `--compute-stats`. Each 7-mer
+covariance is about 130 MB, so you can fetch just the models you need, without
+downloading whole archives:
 
-The archives also contain candidate models that were curated out of the final
-collections. To run exactly the published collections, use the lists in
-[`model_lists/`](model_lists) (see [Running a collection](#running-a-collection)).
+```bash
+qbic-selex download primary-covs --models CTCF_FL_TG40NCTGTGG_YWL_jolma2025_0_3_7mer
+qbic-selex download primary-covs --model-list my_models.txt     # one model ID or path per line
+```
 
-Covariance matrices are only needed with `--compute-stats`. Each primary 7-mer
-covariance is 128 MB. To get only some of them, download the archive from
-Zenodo yourself and extract just those files, e.g.
-`tar -m -I zstd -xf covs_primary.tar.zst covs_primary/CTCF_FL_TG40NCTGTGG_YWL_jolma2025_0_3_7mer.cov_8192.npy`.
+Each matrix is stored as its own compressed block inside the archives, located
+by `covs_index.csv` on Zenodo; each one is checked against its md5. Downloads
+come from the Zenodo version this release was made with; `--record latest`
+follows the newest version. Unpacking a whole archive needs about twice its
+size in free space, briefly (`--keep-archive` keeps the `.tar.zst`).
 
 ## Quick start
 

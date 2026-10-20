@@ -37,4 +37,4 @@ The example covariance matrices (268 MB) and hg38 are not in the repository.
 Point the tests at them with `QBIC_SELEX_EXAMPLE_COVS=<dir>` and
 `QBIC_SELEX_GENOME=<hg38.fa>`; tests that need them are skipped otherwise.
 The covariances are in `example_covs.tar.zst` on Zenodo
-(https://doi.org/10.5281/zenodo.15891511).
+(https://doi.org/10.5281/zenodo.23482275).

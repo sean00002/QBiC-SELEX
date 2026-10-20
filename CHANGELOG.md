@@ -7,7 +7,9 @@ First packaged release, accompanying the QBiC-SELEX paper.
 ### Added
 - `pip install qbic-selex` (GPU: `pip install "qbic-selex[gpu]"`) with a `qbic-selex` command:
   `predict`, `extract` (context sequences only), `model-map` and `download` (fetch the model
-  collections from Zenodo with checksum verification and resumable downloads).
+  collections from Zenodo with checksum verification and resumable downloads; single models'
+  covariance matrices with `--models` / `--model-list`). Defaults to Zenodo version 2
+  (10.5281/zenodo.23482275), which holds exactly the 997 primary and 243 secondary models.
 - `-m` and `-c` accept directories; list files may give bare model names, resolved with `--model-dir`.
 - `--device auto|cpu|gpu`. `auto` checks that the GPU actually works and otherwise falls back to the CPU.
 - `qbic_status` output column: why a row has NA (`ref_mismatch`, `chrom_not_found`, `out_of_bounds`,

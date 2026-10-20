@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 # The Zenodo record this version of the software was released with. `--record latest`
 # follows the concept DOI to the newest version instead.
-ZENODO_RECORD = "15891511"
+ZENODO_RECORD = "23482275"   # version 2: the paper's 997 primary + 243 secondary models
 ZENODO_CONCEPT_RECORD = "15891510"
 ZENODO_API = "https://zenodo.org/api/records/"
 

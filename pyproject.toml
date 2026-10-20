@@ -37,7 +37,7 @@ qbic-selex = "qbic_selex.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/sean00002/QBiC-SELEX"
-"Models (Zenodo)" = "https://doi.org/10.5281/zenodo.15891511"
+"Models (Zenodo)" = "https://doi.org/10.5281/zenodo.23482275"
 "Models (IGVF)" = "https://data.igvf.org/model-sets/IGVFDS0925IUTE/"
 
 [tool.setuptools.dynamic]
