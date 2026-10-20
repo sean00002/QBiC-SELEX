@@ -20,9 +20,9 @@ pip install qbic-selex            # CPU
 pip install "qbic-selex[gpu]"     # + CuPy with CUDA 12 libraries, for fast statistics on NVIDIA GPUs
 ```
 
-Python ≥ 3.10. This installs the `qbic-selex` command. The example models and
-inputs, the mapping tables and the model lists are in this GitHub repository,
-not in the pip package. Clone it for the [quick start](#quick-start), or to
+Python ≥ 3.10. This installs the `qbic-selex` command, with two small example
+models and example inputs for the [quick start](#quick-start). The mapping
+tables and model lists are in this GitHub repository; clone it for those, or to
 change the code (`pip install -e .` from the clone).
 
 ## Get the models
@@ -48,7 +48,7 @@ qbic-selex download --list                              # all datasets and their
 | `secondary-weights` | `models_secondary.tar.zst` | 6.5 MB | `tf_models_secondary_collection/`: the 243 secondary models |
 | `primary-covs` | `covs_primary.part01`–`07.tar.zst` | 124 GB | `covs_primary/`: covariances for the primary models |
 | `secondary-covs` | `covs_secondary.tar.zst` | 25 GB | `covs_secondary/`: covariances for the secondary models |
-| `example-covs` | `example_covs.tar.zst` | 250 MB | `example_covs/`: covariances for the two example models (ETV4, GABPA). The example models themselves are in this repository, in `example_models/`; they are also two of the primary models, so `primary-weights` and `primary-covs` include them too. |
+| `examples` | `example_covs.tar.zst` | 250 MB | everything for the [quick start](#quick-start): the two example models (ETV4, GABPA) in `example_models/` and the example inputs, which come with the package, plus their covariances in `example_covs/` |
 
 Covariance matrices are only needed for z-scores and p-values
 (`--compute-stats`). Each is about 130 MB, so you can fetch just the models you
@@ -61,13 +61,12 @@ qbic-selex download primary-covs --model-list my_models.txt     # one model ID o
 
 ## Quick start
 
-The repository includes two example models (ETV4 and GABPA, both from the
-primary collection) and example inputs, so the quick start runs from a clone:
+`qbic-selex download examples` sets up a folder with two example models (ETV4
+and GABPA, both from the primary collection), their covariance matrices and
+example inputs:
 
 ```bash
-git clone https://github.com/sean00002/QBiC-SELEX && cd QBiC-SELEX
-pip install .
-qbic-selex download example-covs -o .      # covariances for the two example models -> ./example_covs
+qbic-selex download examples -o qbic_examples && cd qbic_examples
 ```
 
 From variant coordinates, with z-scores and p-values (needs a reference genome, see below):
@@ -77,13 +76,16 @@ qbic-selex predict -v example_input_variants.csv -m example_models_list.txt \
     -c example_covs --compute-stats -g hg38.fa -o results.csv
 ```
 
-From pre-extracted sequences, with and without statistics:
+From pre-extracted sequences, with and without statistics (no genome needed):
 
 ```bash
 qbic-selex predict -v example_input_sequences.csv -m example_models_list.txt \
     -c example_covs --compute-stats -o results.csv
 qbic-selex predict -v example_input_sequences.csv -m example_models_list.txt -o results.csv
 ```
+
+Each command writes `results.csv` with 398 rows (199 variants × 2 models). If
+they run, the installation works.
 
 Reference genomes (UCSC): [hg38](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz),
 [hg19](https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz). Decompress with `gunzip` first.

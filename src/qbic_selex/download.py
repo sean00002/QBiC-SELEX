@@ -25,6 +25,7 @@ ZENODO_API = "https://zenodo.org/api/records/"
 DATASETS = {
     "primary-weights": ("models_primary.tar.zst", "primary-collection model files (weights)"),
     "secondary-weights": ("models_secondary.tar.zst", "secondary-collection model files (weights)"),
+    "examples": ("example_covs.tar.zst", "example models, inputs and covariances, to try QBiC-SELEX"),
     "example-covs": ("example_covs.tar.zst", "covariances for the two example models"),
     "primary-covs": ("covs_primary.tar.zst", "covariances for the primary models"),
     "secondary-covs": ("covs_secondary.tar.zst", "covariances for the secondary models"),
@@ -178,9 +179,40 @@ def _download_one(remote: RemoteFile, dest: Path, keep_archive: bool, record_id)
     log.info("Unpacked %d files from %s", n, remote.key)
 
 
+def copy_example_files(dest: Path) -> list[Path]:
+    """Copy the example models and inputs bundled with the package into ``dest``."""
+    from importlib.resources import files
+
+    written = []
+
+    def walk(node, rel):
+        for child in node.iterdir():
+            if child.is_dir():
+                walk(child, rel / child.name)
+            elif not child.name.startswith((".", "__")):
+                target = dest / rel / child.name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                data = child.read_bytes()
+                if not (target.exists() and target.read_bytes() == data):
+                    target.write_bytes(data)
+                written.append(target)
+
+    walk(files("qbic_selex") / "examples", Path())
+    return written
+
+
 def download_dataset(name: str, dest: Path, record: str = ZENODO_RECORD, keep_archive: bool = False,
                      record_json: dict | None = None) -> Path:
-    """Download one dataset (see DATASETS) into ``dest`` and unpack it. Returns ``dest``."""
+    """Download one dataset (see DATASETS) into ``dest`` and unpack it. Returns ``dest``.
+
+    ``examples`` = the example models and inputs shipped with the package, plus the
+    example covariances from Zenodo.
+    """
+    if name == "examples":
+        dest.mkdir(parents=True, exist_ok=True)
+        n = len(copy_example_files(dest))
+        log.info("Wrote %d example files (models, inputs, lists) into %s", n, dest)
+        name = "example-covs"
     record_json = record_json or fetch_record(record)
     remotes = dataset_files(name, record_files(record_json))
     if not remotes:

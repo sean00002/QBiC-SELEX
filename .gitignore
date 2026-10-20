@@ -3,8 +3,6 @@
 *.fa.fai
 *.fasta
 genome/*
-example_covs/*
-!example_covs/.gitkeep
 !genome/.gitkeep
 CLAUDE.md
 __pycache__/
@@ -13,8 +11,9 @@ tmp_*.csv
 qbic_error_report_*.log
 results.csv
 
-# qbic-selex download: default folder and per-archive markers
+# qbic-selex download: default folders and per-archive markers
 qbic_selex_data/
+qbic_examples/
 .*.qbic-selex-download.json
 
 # Python packaging / tooling

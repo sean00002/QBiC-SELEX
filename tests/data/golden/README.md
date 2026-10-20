@@ -1,7 +1,7 @@
 # Golden outputs
 
 Results of running QBiC-SELEX on the repository's example inputs with the two
-example models (`example_models/`). `tests/test_golden.py` re-runs these
+example models (`src/qbic_selex/examples/`, also installed with the package). `tests/test_golden.py` re-runs these
 scenarios and compares them: effects and all other columns within rtol 1e-6;
 z-scores within rtol/atol 1e-5 and p-values within 1e-4 on the -log10 scale
 (in `--short-output`, one unit in the 4th significant digit). z and p come

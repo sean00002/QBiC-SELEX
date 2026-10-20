@@ -11,7 +11,8 @@ import pytest
 from qbic_selex.kmers import reverse_complement
 
 REPO = Path(__file__).resolve().parents[1]
-EXAMPLE_MODELS = REPO / "example_models"
+EXAMPLES = REPO / "src" / "qbic_selex" / "examples"   # shipped as package data
+EXAMPLE_MODELS = EXAMPLES / "example_models"
 
 
 def canonical_kmers(k):

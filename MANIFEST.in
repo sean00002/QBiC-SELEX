@@ -1,6 +1,5 @@
 include CHANGELOG.md CITATION.cff
-include example_models_list.txt example_input_sequences.csv example_input_variants.csv
-recursive-include example_models *.qbic
+recursive-include src/qbic_selex/examples *.csv *.txt *.qbic
 recursive-include tests *.py *.csv *.md
 include scripts/compare_outputs.py
 include qbic_predict.py generate_model_map.py

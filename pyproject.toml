@@ -46,6 +46,10 @@ version = { attr = "qbic_selex.__version__" }
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+# example models and inputs for `qbic-selex download examples` (about 0.5 MB)
+qbic_selex = ["examples/*.csv", "examples/*.txt", "examples/example_models/*.weights.qbic"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["gpu: needs a CUDA GPU and cupy (deselected unless -m gpu)"]
