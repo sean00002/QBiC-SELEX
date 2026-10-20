@@ -35,15 +35,15 @@ against Zenodo, resumes interrupted downloads, and unpacks into
 `./qbic_selex_data` (change it with `-o DIR`):
 
 ```bash
-qbic-selex download primary secondary     # model files, 37 MB
+qbic-selex download primary-weights secondary-weights   # model files, 37 MB
 qbic-selex download example-covs          # covariances for the two example models, 250 MB
 qbic-selex download --list                # all datasets and their sizes
 ```
 
 | Dataset | Zenodo file(s) | Size | Contents |
 |---|---|---|---|
-| `primary` | `models_primary.tar.zst` | 30 MB | 997 primary model files (`*.weights.qbic`) |
-| `secondary` | `models_secondary.tar.zst` | 6.5 MB | 243 secondary model files |
+| `primary-weights` | `models_primary.tar.zst` | 30 MB | 997 primary model files (`*.weights.qbic`) |
+| `secondary-weights` | `models_secondary.tar.zst` | 6.5 MB | 243 secondary model files |
 | `example-covs` | `example_covs.tar.zst` | 250 MB | covariances for the two example models in this repository |
 | `primary-covs` | `covs_primary.part01`–`07.tar.zst` | 124 GB | covariances for the primary models (only needed for z/p) |
 | `secondary-covs` | `covs_secondary.tar.zst` | 25 GB | covariances for the secondary models |

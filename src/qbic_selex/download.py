@@ -23,8 +23,8 @@ ZENODO_CONCEPT_RECORD = "15891510"
 ZENODO_API = "https://zenodo.org/api/records/"
 
 DATASETS = {
-    "primary": ("models_primary.tar.zst", "primary-collection model files"),
-    "secondary": ("models_secondary.tar.zst", "secondary-collection model files"),
+    "primary-weights": ("models_primary.tar.zst", "primary-collection model files (weights)"),
+    "secondary-weights": ("models_secondary.tar.zst", "secondary-collection model files (weights)"),
     "example-covs": ("example_covs.tar.zst", "covariances for the two example models"),
     "primary-covs": ("covs_primary.tar.zst", "covariances for the primary models"),
     "secondary-covs": ("covs_secondary.tar.zst", "covariances for the secondary models"),
@@ -230,7 +230,7 @@ def download_models(name: str, model_ids: list[str], dest: Path, record: str = Z
     """
     if not name.endswith("-covs"):
         raise ValueError("single models can be fetched only from covariance datasets "
-                         "(the model-file archives are small; download them whole)")
+                         "(the weights archives are small; download them whole)")
     record_json = record_json or fetch_record(record)
     files = record_files(record_json)
     stem = _dataset_stem(name)

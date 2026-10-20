@@ -221,7 +221,7 @@ def run_download(args) -> int:
                 size = f"{sum(f.size for f in parts) / 1e9:8.2f} GB"
                 if len(parts) > 1:
                     size += f" ({len(parts)} parts)"
-            print(f"  {name:15s} {size}  {what}")
+            print(f"  {name:18s} {size}  {what}")
         return 0
     unknown = [d for d in args.datasets if d not in download.DATASETS]
     if unknown:
@@ -241,12 +241,13 @@ def run_download(args) -> int:
         return 0
     for name in args.datasets:
         download.download_dataset(name, dest, args.record, args.keep_archive, record_json=record)
-    hints = {"primary": ("tf_models_primary_collection", "model_lists/primary_collection.txt"),
-             "secondary": ("tf_models_secondary_collection", "model_lists/secondary_collection.txt")}
+    hints = {"primary-weights": ("tf_models_primary_collection", "model_lists/primary_collection.txt"),
+             "secondary-weights": ("tf_models_secondary_collection", "model_lists/secondary_collection.txt")}
     for name in args.datasets:
         if name in hints:
             sub, lst = hints[name]
-            log.info("Run the %s collection with: -m %s --model-dir %s", name, lst, dest / sub)
+            log.info("Run the %s collection with: -m %s --model-dir %s", name.removesuffix("-weights"), lst,
+                     dest / sub)
     return 0
 
 
