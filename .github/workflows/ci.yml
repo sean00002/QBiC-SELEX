@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "release/**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: macos-latest
+            python-version: "3.12"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check src tests scripts
+      - run: pytest -q -rs
+      - name: CLI smoke test on the example data
+        run: |
+          qbic-selex --version
+          qbic-selex predict -v example_input_sequences.csv -m example_models_list.txt -o /tmp/out.csv
+          python qbic_predict.py -v example_input_sequences.csv -m example_models_list.txt -o /tmp/out_legacy.csv
+          cmp /tmp/out.csv /tmp/out_legacy.csv
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check --strict dist/*
+      - name: Install the wheel in a clean environment
+        run: |
+          python -m venv /tmp/venv
+          /tmp/venv/bin/pip install dist/*.whl
+          /tmp/venv/bin/qbic-selex predict -v example_input_sequences.csv -m example_models -o /tmp/out.csv
