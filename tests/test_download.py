@@ -212,3 +212,27 @@ def test_fetch_unknown_model_and_corruption(tmp_path, framed_record, range_serve
     open(path, "w").write("\n".join(rows) + "\n")
     with pytest.raises(OSError, match="md5"):
         download.download_models("primary-covs", ["M0_0_1_7mer"], tmp_path / "y", record_json=rec)
+
+
+def test_download_examples(tmp_path, monkeypatch, toy):
+    """examples = bundled example models and inputs + example covariances from Zenodo."""
+    src = tmp_path / "src"
+    src.mkdir()
+    covs = make_archive(src / "example_covs.tar.zst", {
+        "example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov_8192.npy": b"x",
+        "example_covs/GABPA_FL_TC40NGCGATT_YWL_jolma2025_0_2_7mer.cov_8192.npy": b"y"})
+    monkeypatch.setattr(download, "fetch_record", lambda record: fake_record(covs))
+    dest = tmp_path / "ex"
+    assert main(["--quiet", "download", "examples", "-o", str(dest)]) == 0
+    got = sorted(str(p.relative_to(dest)) for p in dest.rglob("*")
+                 if p.is_file() and not p.name.startswith("."))
+    assert got == ["example_covs/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.cov_8192.npy",
+                   "example_covs/GABPA_FL_TC40NGCGATT_YWL_jolma2025_0_2_7mer.cov_8192.npy",
+                   "example_covs_list.txt", "example_input_sequences.csv", "example_input_variants.csv",
+                   "example_models/ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer.weights.qbic",
+                   "example_models/GABPA_FL_TC40NGCGATT_YWL_jolma2025_0_2_7mer.weights.qbic",
+                   "example_models_list.txt"]
+    # the example list resolves to the copied models
+    out = tmp_path / "res.csv"
+    assert main(["--quiet", "predict", "-v", str(dest / "example_input_sequences.csv"),
+                 "-m", str(dest / "example_models_list.txt"), "-o", str(out)]) == 0

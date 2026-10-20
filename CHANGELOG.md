@@ -37,9 +37,10 @@ First packaged release, accompanying the QBiC-SELEX paper.
 - Model files are read with a restricted unpickler.
 
 ### Changed
-- `qbic_predict.py` / `qbic_predict_faster.py` / `generate_model_map.py` are thin wrappers around the
-  package and accept the old options. `--use-gpu`/`--use-cpu` map to `--device`; `--n-jobs` is
-  accepted but has no effect.
+- `qbic_predict.py` and `generate_model_map.py` are thin wrappers around the package and accept the
+  old options. `qbic_predict_faster.py` is removed: its batched statistics are now the only
+  implementation, behind `qbic-selex predict` and `qbic_predict.py`. `--use-gpu`/`--use-cpu` map
+  to `--device`; `--n-jobs` is accepted but has no effect.
 - Statistics use only the batched implementation (formerly `qbic_predict_faster.py`), which matches
   the original per-variant computation up to float32 rounding.
 - GPU support needs only CuPy (`cudf`, `cuml` and `torch` are no longer used). `env.yml` is removed.

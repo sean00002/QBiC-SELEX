@@ -241,13 +241,14 @@ def run_download(args) -> int:
         return 0
     for name in args.datasets:
         download.download_dataset(name, dest, args.record, args.keep_archive, record_json=record)
-    hints = {"primary-weights": ("tf_models_primary_collection", "model_lists/primary_collection.txt"),
-             "secondary-weights": ("tf_models_secondary_collection", "model_lists/secondary_collection.txt")}
+    hints = {"primary-weights": "tf_models_primary_collection",
+             "secondary-weights": "tf_models_secondary_collection"}
     for name in args.datasets:
         if name in hints:
-            sub, lst = hints[name]
-            log.info("Run the %s collection with: -m %s --model-dir %s", name.removesuffix("-weights"), lst,
-                     dest / sub)
+            log.info("Run the %s collection with: -m %s", name.removesuffix("-weights"), dest / hints[name])
+        if name == "examples":
+            log.info("Try it: cd %s && qbic-selex predict -v example_input_sequences.csv "
+                     "-m example_models_list.txt -c example_covs --compute-stats -o results.csv", dest)
     return 0
 
 

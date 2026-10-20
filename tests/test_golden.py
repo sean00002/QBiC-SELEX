@@ -13,10 +13,10 @@ import pandas as pd
 
 from qbic_selex.cli import main
 
-from .conftest import REPO
+from .conftest import EXAMPLES, REPO
 
 GOLDEN = REPO / "tests" / "data" / "golden"
-MODELS = REPO / "example_models_list.txt"
+MODELS = EXAMPLES / "example_models_list.txt"
 ETV4 = "ETV4_eDBD_TTTGCC40NTGA_KS_yin2017_0_4_7mer"
 
 _spec = importlib.util.spec_from_file_location("compare_outputs", REPO / "scripts" / "compare_outputs.py")
@@ -54,27 +54,27 @@ def run_and_compare(name, args, tmp_path, rounded=False):
 
 
 def test_A_sequences_no_stats(tmp_path):
-    run_and_compare("A_seq_nostats", ["-v", REPO / "example_input_sequences.csv", "-m", MODELS], tmp_path)
+    run_and_compare("A_seq_nostats", ["-v", EXAMPLES / "example_input_sequences.csv", "-m", MODELS], tmp_path)
 
 
 def test_B_sequences_stats(tmp_path, example_covs):
-    run_and_compare("B_seq_stats", ["-v", REPO / "example_input_sequences.csv", "-m", MODELS,
+    run_and_compare("B_seq_stats", ["-v", EXAMPLES / "example_input_sequences.csv", "-m", MODELS,
                                     "-c", example_covs, "--compute-stats"], tmp_path)
 
 
 def test_C_sequences_wildcard_stats(tmp_path, example_covs):
-    run_and_compare("C_seq_wildcard_stats", ["-v", REPO / "example_input_sequences.csv", "-m", MODELS,
+    run_and_compare("C_seq_wildcard_stats", ["-v", EXAMPLES / "example_input_sequences.csv", "-m", MODELS,
                                              "-c", example_covs, "--compute-stats", "--wildcard", "A"],
                     tmp_path)
 
 
 def test_D_variants_stats(tmp_path, example_covs, hg38):
-    run_and_compare("D_var_stats", ["-v", REPO / "example_input_variants.csv", "-m", MODELS,
+    run_and_compare("D_var_stats", ["-v", EXAMPLES / "example_input_variants.csv", "-m", MODELS,
                                     "-c", example_covs, "--compute-stats", "-g", hg38], tmp_path)
 
 
 def test_D_zero_based_equivalent(tmp_path, example_covs, hg38):
-    v = pd.read_csv(REPO / "example_input_variants.csv")
+    v = pd.read_csv(EXAMPLES / "example_input_variants.csv")
     zero = tmp_path / "zero.csv"
     v.assign(pos=v.start).drop(columns="start").to_csv(zero, index=False)
     out = tmp_path / "E.csv"
@@ -85,7 +85,7 @@ def test_D_zero_based_equivalent(tmp_path, example_covs, hg38):
 
 
 def test_F_short_output_pval(tmp_path, example_covs, hg38):
-    run_and_compare("F_var_short_pval", ["-v", REPO / "example_input_variants.csv", "-m", MODELS,
+    run_and_compare("F_var_short_pval", ["-v", EXAMPLES / "example_input_variants.csv", "-m", MODELS,
                                          "-c", example_covs, "--compute-stats", "-g", hg38,
                                          "--pval", "0.001", "--short-output",
                                          "--model-map", GOLDEN / "example_model_map.csv"],
@@ -93,7 +93,7 @@ def test_F_short_output_pval(tmp_path, example_covs, hg38):
 
 
 def test_H_single_model(tmp_path, example_covs, hg38):
-    run_and_compare("H_single_stats", ["-v", REPO / "example_input_variants.csv",
-                                       "-m", REPO / "example_models" / f"{ETV4}.weights.qbic",
+    run_and_compare("H_single_stats", ["-v", EXAMPLES / "example_input_variants.csv",
+                                       "-m", EXAMPLES / "example_models" / f"{ETV4}.weights.qbic",
                                        "-c", Path(example_covs) / f"{ETV4}.cov_8192.npy",
                                        "--compute-stats", "-g", hg38], tmp_path)

@@ -28,8 +28,9 @@ jobs:
       - name: CLI smoke test on the example data
         run: |
           qbic-selex --version
-          qbic-selex predict -v example_input_sequences.csv -m example_models_list.txt -o /tmp/out.csv
-          python qbic_predict.py -v example_input_sequences.csv -m example_models_list.txt -o /tmp/out_legacy.csv
+          EX=src/qbic_selex/examples
+          qbic-selex predict -v $EX/example_input_sequences.csv -m $EX/example_models_list.txt -o /tmp/out.csv
+          python qbic_predict.py -v $EX/example_input_sequences.csv -m $EX/example_models_list.txt -o /tmp/out_legacy.csv
           cmp /tmp/out.csv /tmp/out_legacy.csv
 
   build:
@@ -46,4 +47,7 @@ jobs:
         run: |
           python -m venv /tmp/venv
           /tmp/venv/bin/pip install dist/*.whl
-          /tmp/venv/bin/qbic-selex predict -v example_input_sequences.csv -m example_models -o /tmp/out.csv
+          # the example files must be inside the installed wheel
+          EX=$(/tmp/venv/bin/python -c "import qbic_selex, pathlib; print(pathlib.Path(qbic_selex.__file__).parent / 'examples')")
+          ls $EX/example_models/*.weights.qbic
+          cd /tmp && /tmp/venv/bin/qbic-selex predict -v $EX/example_input_sequences.csv -m $EX/example_models_list.txt -o /tmp/out.csv
