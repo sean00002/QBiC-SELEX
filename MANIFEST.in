@@ -3,4 +3,4 @@ include example_models_list.txt example_input_sequences.csv example_input_varian
 recursive-include example_models *.qbic
 recursive-include tests *.py *.csv *.md
 include scripts/compare_outputs.py
-include qbic_predict.py qbic_predict_faster.py generate_model_map.py
+include qbic_predict.py generate_model_map.py
