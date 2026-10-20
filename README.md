@@ -1,5 +1,9 @@
 # QBiC-SELEX
 
+[![PyPI](https://img.shields.io/pypi/v/qbic-selex)](https://pypi.org/project/qbic-selex/)
+[![Software DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23503568.svg)](https://doi.org/10.5281/zenodo.23503568)
+[![Models DOI](https://img.shields.io/badge/models-10.5281%2Fzenodo.23482275-blue)](https://doi.org/10.5281/zenodo.23482275)
+
 **Quantitative, bias-corrected prediction of variant effects on transcription factor binding.**
 
 QBiC-SELEX predicts how non-coding genetic variants change the binding of
@@ -200,7 +204,15 @@ wrappers around the same code; see [CHANGELOG.md](CHANGELOG.md).
 ## Citation
 
 If you use QBiC-SELEX, please cite the paper (citation to be added on
-publication) and the software release; see [CITATION.cff](CITATION.cff).
+publication), the software and the models:
+
+- Software: Li S. *QBiC-SELEX* (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.23503569
+  (all versions: https://doi.org/10.5281/zenodo.23503568)
+- Models: Li S., Gordan R. *QBiC-SELEX model weights and covariance matrices* (v2.0). Zenodo.
+  https://doi.org/10.5281/zenodo.23482275
+
+GitHub's "Cite this repository" button gives these in APA and BibTeX format
+(from [CITATION.cff](CITATION.cff)).
 
 ## License
 
