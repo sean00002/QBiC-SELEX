@@ -3,6 +3,7 @@ message: "If you use QBiC-SELEX, please cite the software and the accompanying p
 title: "QBiC-SELEX: quantitative, bias-corrected modeling of variant effects on transcription factor binding"
 type: software
 version: 1.0.0
+date-released: 2026-10-20
 license: MIT
 repository-code: "https://github.com/sean00002/QBiC-SELEX"
 authors:
