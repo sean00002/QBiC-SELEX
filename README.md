@@ -192,14 +192,12 @@ It lists each model's validation metrics.
 ## Commands
 
 ```text
-qbic-selex predict    score variants (main command; `qbic-selex predict -h` for all options)
-qbic-selex extract    only extract ref/alt context sequences from a genome
-qbic-selex model-map  make a model ID map for --short-output
-qbic-selex download   download and unpack model collections from Zenodo
+qbic-selex predict    #score variants (main command; `qbic-selex predict -h` for all options)
+qbic-selex extract    #only extract ref/alt context sequences from a genome
+qbic-selex model-map  #make a model ID map for --short-output
+qbic-selex download   #download and unpack model collections from Zenodo
 ```
 
-The pre-1.0 scripts `qbic_predict.py` and `generate_model_map.py` still work as
-wrappers around the same code; see [CHANGELOG.md](CHANGELOG.md).
 
 ## Citation
 
